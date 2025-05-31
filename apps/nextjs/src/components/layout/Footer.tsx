@@ -11,20 +11,20 @@ const Footer: React.FC = () => {
               © {new Date().getFullYear()} Coinlaunch All rights reserved.
             </p>
           </div>
-          <nav className="flex space-x-4">
-            <Link 
-              href="/about" 
-              className="text-[10px] sm:text-xs text-gray-400 hover:text-[var(--primary-hover)] transition-colors"
-            >
-              About
-            </Link>
-            <Link 
-              href="/FAQ" 
-              className="text-[10px] sm:text-xs text-gray-400 hover:text-[var(--primary-hover)] transition-colors"
-            >
-              FAQ
-            </Link>
-          </nav>
+          {/*<nav className="flex space-x-4">*/}
+          {/*  <Link */}
+          {/*    href="/about" */}
+          {/*    className="text-[10px] sm:text-xs text-gray-400 hover:text-[var(--primary-hover)] transition-colors"*/}
+          {/*  >*/}
+          {/*    About*/}
+          {/*  </Link>*/}
+          {/*  <Link */}
+          {/*    href="/FAQ" */}
+          {/*    className="text-[10px] sm:text-xs text-gray-400 hover:text-[var(--primary-hover)] transition-colors"*/}
+          {/*  >*/}
+          {/*    FAQ*/}
+          {/*  </Link>*/}
+          {/*</nav>*/}
         </div>
       </div>
     </footer>
