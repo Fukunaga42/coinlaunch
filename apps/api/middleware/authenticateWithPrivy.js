@@ -4,6 +4,8 @@ const privyClient = require("../services/privyClient");
 const authenticateWithPrivy = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    console.log("🛂 Incoming Authorization header:", authHeader);
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.warn("⚠️ Missing or invalid Authorization header");
       return res.status(HttpStatusCode.Unauthorized).json({
@@ -12,8 +14,13 @@ const authenticateWithPrivy = async (req, res, next) => {
     }
 
     const accessToken = authHeader.substring(7);
+    console.log("🔍 Access token received:", accessToken.slice(0, 20) + "...");
+
     const tokenClaims = await privyClient.verifyAuthToken(accessToken);
+    console.log("✅ Token claims:", tokenClaims);
+
     const userProfile = await privyClient.getUserById(tokenClaims.userId);
+    console.log("👤 Fetched user profile:", userProfile);
 
     req.user = userProfile;
 

@@ -25,7 +25,7 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 const PRIVY_APP_ID: string = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "";
-
+console.log("FE PRIVY APP ID:", process.env.NEXT_PUBLIC_PRIVY_APP_ID )
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig config={config}>
@@ -35,6 +35,7 @@ export default function App({ Component, pageProps }: AppProps) {
             appId={PRIVY_APP_ID}
 
             config={{
+                autoConnect: false,
               appearance: {
                 theme: "dark",
                 accentColor: "#9333EA",

@@ -4,6 +4,7 @@ const uploadRoute = require("./routes/upload");
 const { connectDB } = require("./services/db");
 const authenticateWithPrivy = require("./middleware/authenticateWithPrivy");
 const Token = require("./models/Token");
+const {HttpStatusCode} = require("axios");
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -21,12 +22,12 @@ app.get("/", (req, res) => {
   console.log("👋 Root route hit");
   res.send("Hackathon is up and running!");
 });
-app.get("/privy", authenticateWithPrivy, async (req, res) => {
-  return res.status(HttpStatusCode.Ok).json({
-    success: true,
-    message: "Authentication successful",
+  app.get("/privy", authenticateWithPrivy, async (req, res) => {
+    return res.status(HttpStatusCode.Ok).json({
+      success: true,
+      message: "Authentication successful",
+    });
   });
-});
 
 app.patch("/api/tokens/update/:address", async (req, res) => {
   const address = req.params.address;
@@ -120,6 +121,53 @@ app.get('/api/tokens/trending', async (req, res) => {
   }
 });
 
+app.get('/api/ports/getTokensByCreator', async (req, res) => {
+  console.log('📥 GET /api/ports/getTokensByCreator hit');
+
+  const { creatorAddress } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 20;
+
+  if (!creatorAddress) {
+    return res.status(400).json({ error: 'creatorAddress is required' });
+  }
+
+  try {
+    // Filter tokens by creator and only include those with a twitterAuthorId
+    const filter = {
+      creator: creatorAddress.toLowerCase(),
+      twitterAuthorId: { $exists: true, $ne: null }
+    };
+
+    const total = await Token.countDocuments(filter);
+    const tokens = await Token.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize);
+
+    const responseTokens = tokens.map(token => ({
+      address: token.address,
+      name: token.name,
+      symbol: token.symbol,
+      description: token.description,
+      logo: token.logo || null,
+      creator: token.creator,
+      isComplete: !!token.twitterAuthorId
+    }));
+
+    res.json({
+      tokens: responseTokens,
+      currentPage: page,
+      totalPages: Math.ceil(total / pageSize)
+    });
+  } catch (err) {
+    console.error('❌ Error fetching tokens by creator:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+app.get('')
 
 // Start server after DB is ready
 connectDB().then(() => {

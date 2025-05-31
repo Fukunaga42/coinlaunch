@@ -40,12 +40,12 @@ class TokenMinterService {
             this.isConfigured = true;
             
             // Check if we're on a testnet or mainnet
-            this.provider.getNetwork().then(network => {
-                const networkName = network.name === 'homestead' ? 'mainnet' : network.name;
-                console.log(`✅ TokenMinterService configured on ${networkName} (chainId: ${network.chainId})`);
-            }).catch(err => {
-                console.error('❌ Error getting network info:', err);
-            });
+            // this.provider.getNetwork().then(network => {
+            //     const networkName = network.name === 'homestead' ? 'mainnet' : network.name;
+            //     console.log(`✅ TokenMinterService configured on ${networkName} (chainId: ${network.chainId})`);
+            // }).catch(err => {
+            //     console.error('❌ Error getting network info:', err);
+            // });
             
         } catch (error) {
             console.error('❌ Error configuring TokenMinterService:', error);
@@ -113,6 +113,13 @@ class TokenMinterService {
             return { success: false, error };
         }
         
+        // Check if SERVER_WALLET_PRIVATE_KEY is configured
+        if (!process.env.SERVER_WALLET_PRIVATE_KEY) {
+            const error = 'SERVER_WALLET_PRIVATE_KEY not configured - cannot mint tokens';
+            console.error('❌', error);
+            return { success: false, error };
+        }
+        
         const { tokenId, name, symbol, imageUrl, xPostId } = tokenData;
         
         console.log(`🏗️ Starting mint process for ${name} (${symbol})`);
@@ -127,11 +134,16 @@ class TokenMinterService {
             // Update status to MINTING
             await Token.findByIdAndUpdate(tokenId, { status: 'MINTING' });
             
-            // Get or create escrow wallet for the Twitter user
-            const escrowAddress = await this.escrowWalletService.getOrCreateEscrowWallet(token.twitterUsername);
-            const escrowWallet = await this.escrowWalletService.getEscrowWalletInstance(token.twitterUsername);
+            // Create server wallet instance from private key
+            const serverWallet = new ethers.Wallet(process.env.SERVER_WALLET_PRIVATE_KEY, this.provider);
+            const serverAddress = serverWallet.address;
             
-            console.log(`🔐 Using escrow wallet for @${token.twitterUsername}: ${escrowAddress}`);
+            console.log(`🔐 Using server wallet: ${serverAddress}`);
+            
+            // COMMENTED OUT: Escrow wallet logic - now using server wallet directly
+            // const escrowAddress = await this.escrowWalletService.getOrCreateEscrowWallet(token.twitterUsername);
+            // const escrowWallet = await this.escrowWalletService.getEscrowWalletInstance(token.twitterUsername);
+            // console.log(`🔐 Using escrow wallet for @${token.twitterUsername}: ${escrowAddress}`);
             
             // Download and upload image to IPFS
             let ipfsImageUrl = '';
@@ -150,11 +162,11 @@ class TokenMinterService {
                 }
             }
             
-            // Create contract instance with escrow wallet
+            // Create contract instance with server wallet
             const bondingCurveManager = new ethers.Contract(
                 this.bondingCurveManagerAddress,
                 this.bondingCurveManagerABI,
-                escrowWallet // Use escrow wallet instead of server wallet
+                serverWallet // Use server wallet instead of escrow wallet
             );
             
             // Estimate gas for the transaction
@@ -167,20 +179,25 @@ class TokenMinterService {
             // Calculate total required ETH (initial liquidity + gas)
             const gasPrice = await this.provider.getGasPrice();
             const gasCost = estimatedGas.mul(gasPrice);
-            const initialLiquidity = ethers.utils.parseEther('0.01');
+            const initialLiquidity = ethers.utils.parseEther('0.0001');
             const totalRequired = initialLiquidity.add(gasCost);
             
-            // Check escrow wallet balance
-            const escrowBalance = await this.provider.getBalance(escrowAddress);
+            // Check server wallet balance
+            const serverBalance = await this.provider.getBalance(serverAddress);
             
-            // Fund escrow wallet if needed
-            if (escrowBalance.lt(totalRequired)) {
-                console.log(`⚠️ Escrow wallet needs funding. Balance: ${ethers.utils.formatEther(escrowBalance)}, Required: ${ethers.utils.formatEther(totalRequired)}`);
-                await this.fundEscrowWallet(escrowAddress, totalRequired.sub(escrowBalance));
+            if (serverBalance.lt(totalRequired)) {
+                throw new Error(`Insufficient server wallet balance. Balance: ${ethers.utils.formatEther(serverBalance)}, Required: ${ethers.utils.formatEther(totalRequired)}`);
             }
             
-            // Call create function on smart contract with escrow wallet
-            console.log(`📝 Calling smart contract to create token from escrow wallet...`);
+            // COMMENTED OUT: Escrow wallet funding logic - not needed with server wallet
+            // const escrowBalance = await this.provider.getBalance(escrowAddress);
+            // if (escrowBalance.lt(totalRequired)) {
+            //     console.log(`⚠️ Escrow wallet needs funding. Balance: ${ethers.utils.formatEther(escrowBalance)}, Required: ${ethers.utils.formatEther(totalRequired)}`);
+            //     await this.fundEscrowWallet(escrowAddress, totalRequired.sub(escrowBalance));
+            // }
+            
+            // Call create function on smart contract with server wallet
+            console.log(`📝 Calling smart contract to create token from server wallet...`);
             const tx = await bondingCurveManager.create(
                 name,
                 symbol,
@@ -212,13 +229,14 @@ class TokenMinterService {
             const creatorAddress = tokenCreatedEvent.args.creator;
             
             console.log(`✅ Token minted! Address: ${tokenAddress}`);
-            console.log(`👤 Creator (escrow wallet): ${creatorAddress}`);
+            console.log(`👤 Creator (server wallet): ${creatorAddress}`);
             
             // Update token in database
             await Token.findByIdAndUpdate(tokenId, {
                 address: tokenAddress.toLowerCase(),
                 creator: creatorAddress.toLowerCase(),
-                escrowWallet: escrowAddress.toLowerCase(),
+                // COMMENTED OUT: No longer using escrow wallet
+                // escrowWallet: escrowAddress.toLowerCase(),
                 logo: ipfsImageUrl,
                 status: 'MINTED',
                 mintedAt: new Date()
@@ -265,4 +283,4 @@ class TokenMinterService {
     }
 }
 
-module.exports = TokenMinterService; 
+module.exports = TokenMinterService;
