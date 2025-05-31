@@ -379,57 +379,57 @@ const Home: React.FC = () => {
             <SearchFilter onSearch={handleSearch} />
             <div className="mb-4">
               <div className="flex flex-col gap-2 md:hidden">
-                <div className="flex justify-center">
-                  <SortOptions onSort={handleSort} currentSort={sort} />
-                </div>
-                <div className="flex justify-center items-center gap-2">
-                  <span className="text-sm text-gray-400">Live Updates</span>
-                  <Switch
-                    checked={showNewTokens}
-                    onCheckedChange={toggleNewTokens}
-                    className={`${
-                      showNewTokens ? 'bg-[var(--primary)]' : 'bg-gray-600'
-                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-gray-800`}
-                  >
-                    <span
-                      className={`${
-                        showNewTokens ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                    />
-                  </Switch>
-                  {!showNewTokens && newTokensBuffer.length > 0 && (
-                    <span className="text-xs text-[var(--primary)]">
-                      {newTokensBuffer.length} new {newTokensBuffer.length === 1 ? 'token' : 'tokens'}
-                    </span>
-                  )}
-                </div>
+                {/*<div className="flex justify-center">*/}
+                {/*  <SortOptions onSort={handleSort} currentSort={sort} />*/}
+                {/*</div>*/}
+                {/*<div className="flex justify-center items-center gap-2">*/}
+                {/*  <span className="text-sm text-gray-400">Live Updates</span>*/}
+                {/*  <Switch*/}
+                {/*    checked={showNewTokens}*/}
+                {/*    onCheckedChange={toggleNewTokens}*/}
+                {/*    className={`${*/}
+                {/*      showNewTokens ? 'bg-[var(--primary)]' : 'bg-gray-600'*/}
+                {/*    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-gray-800`}*/}
+                {/*  >*/}
+                {/*    <span*/}
+                {/*      className={`${*/}
+                {/*        showNewTokens ? 'translate-x-6' : 'translate-x-1'*/}
+                {/*      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}*/}
+                {/*    />*/}
+                {/*  </Switch>*/}
+                {/*  {!showNewTokens && newTokensBuffer.length > 0 && (*/}
+                {/*    <span className="text-xs text-[var(--primary)]">*/}
+                {/*      {newTokensBuffer.length} new {newTokensBuffer.length === 1 ? 'token' : 'tokens'}*/}
+                {/*    </span>*/}
+                {/*  )}*/}
+                {/*</div>*/}
               </div>
 
               <div className="hidden md:flex md:items-center md:justify-between">
-                <div className="flex justify-center flex-grow">
-                  <SortOptions onSort={handleSort} currentSort={sort} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-400">Live Updates</span>
-                  <Switch
-                    checked={showNewTokens}
-                    onCheckedChange={toggleNewTokens}
-                    className={`${
-                      showNewTokens ? 'bg-[var(--primary)]' : 'bg-gray-600'
-                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-gray-800`}
-                  >
-                    <span
-                      className={`${
-                        showNewTokens ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                    />
-                  </Switch>
-                  {!showNewTokens && newTokensBuffer.length > 0 && (
-                    <span className="text-xs text-[var(--primary)]">
-                      {newTokensBuffer.length} new {newTokensBuffer.length === 1 ? 'token' : 'tokens'}
-                    </span>
-                  )}
-                </div>
+                {/*<div className="flex justify-center flex-grow">*/}
+                {/*  <SortOptions onSort={handleSort} currentSort={sort} />*/}
+                {/*</div>*/}
+                {/*<div className="flex items-center gap-2">*/}
+                {/*  <span className="text-sm text-gray-400">Live Updates</span>*/}
+                {/*  <Switch*/}
+                {/*    checked={showNewTokens}*/}
+                {/*    onCheckedChange={toggleNewTokens}*/}
+                {/*    className={`${*/}
+                {/*      showNewTokens ? 'bg-[var(--primary)]' : 'bg-gray-600'*/}
+                {/*    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 focus:ring-offset-gray-800`}*/}
+                {/*  >*/}
+                {/*    <span*/}
+                {/*      className={`${*/}
+                {/*        showNewTokens ? 'translate-x-6' : 'translate-x-1'*/}
+                {/*      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}*/}
+                {/*    />*/}
+                {/*  </Switch>*/}
+                {/*  {!showNewTokens && newTokensBuffer.length > 0 && (*/}
+                {/*    <span className="text-xs text-[var(--primary)]">*/}
+                {/*      {newTokensBuffer.length} new {newTokensBuffer.length === 1 ? 'token' : 'tokens'}*/}
+                {/*    </span>*/}
+                {/*  )}*/}
+                {/*</div>*/}
               </div>
             </div>
           </div>

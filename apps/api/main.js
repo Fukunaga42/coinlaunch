@@ -181,6 +181,72 @@ app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
   }
 });
 
+app.get('/api/tokens/search', async (req, res) => {
+  console.log('📥 GET /api/tokens/search hit');
+  console.log('[DEBUG] Query:', req.query);
+
+  const { q = '', page = 1, pageSize = 20 } = req.query;
+
+  const pageNum = parseInt(page);
+  const limit = parseInt(pageSize);
+
+  if (typeof q !== 'string' || !q.trim()) {
+    return res.status(400).json({ error: 'Query string `q` is required' });
+  }
+
+  const searchRegex = new RegExp(q.trim(), 'i');
+
+  // Build filter
+  const filter = {
+    $or: [
+      { name: { $regex: searchRegex } },
+      { symbol: { $regex: searchRegex } },
+      { twitter: { $regex: searchRegex } }, // If you also want to support full URLs, tweak this
+    ]
+  };
+
+  console.log('[DEBUG] MongoDB search filter:', filter);
+
+  try {
+    const total = await Token.countDocuments(filter);
+    const tokens = await Token.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limit)
+        .limit(limit);
+
+    const responseTokens = tokens.map(token => ({
+      id: token._id.toString(), // Ensure ID format matches your response sample
+      address: token.address,
+      creatorAddress: token.creatorAddress,
+      name: token.name,
+      symbol: token.symbol,
+      logo: token.logo || null,
+      description: token.description,
+      chainId: token.chainId,
+      createdAt: token.createdAt,
+      updatedAt: token.updatedAt,
+      website: token.website || null,
+      telegram: token.telegram || null,
+      discord: token.discord || null,
+      twitter: token.twitter || null,
+      youtube: token.youtube || null,
+      latestTransactionTimestamp: token.latestTransactionTimestamp,
+      _count: token._count || { liquidityEvents: 0 },
+    }));
+
+    console.log(`[DEBUG] Sending ${responseTokens.length} tokens from page ${pageNum}`);
+
+    res.json({
+      tokens: responseTokens,
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limit),
+      totalResults: total
+    });
+  } catch (err) {
+    console.error('❌ Error during token search:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.get('')
 
