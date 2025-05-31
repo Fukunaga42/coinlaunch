@@ -232,7 +232,6 @@ const ProfilePage: React.FC = () => {
 
       setIsLoading(true);
       try {
-        console.log("🔍 Fetching tokens for creator:", twitterId);
         const response = await getTokensByCreator(creatorAddress, page);
         setCreatedTokens(response.tokens);
         setCreatedTokensTotalPages(response.totalPages);
@@ -272,10 +271,6 @@ const ProfilePage: React.FC = () => {
     fetchTransactions,
     fetchTokenAddresses,
   ]);
-
-  useEffect(() => {
-    console.log("📌 Current twitterId state:", twitterId);
-  }, [twitterId]);
 
   useEffect(() => {
     if (!twitterId || !addressToUse) return;
@@ -491,13 +486,6 @@ const ProfilePage: React.FC = () => {
 
 
           </div>
-
-          {authenticated && twitterId && (
-              <div className="mt-2 text-sm text-green-400">
-                Debug: Twitter ID = <code className="bg-gray-800 px-2 py-1 rounded">{twitterId}</code>
-              </div>
-          )}
-
 
         </div>
         {isTokenLoading && (
