@@ -492,6 +492,13 @@ const ProfilePage: React.FC = () => {
 
           </div>
 
+          {authenticated && twitterId && (
+              <div className="mt-2 text-sm text-green-400">
+                Debug: Twitter ID = <code className="bg-gray-800 px-2 py-1 rounded">{twitterId}</code>
+              </div>
+          )}
+
+
         </div>
         {isTokenLoading && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
