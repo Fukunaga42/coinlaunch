@@ -9,7 +9,7 @@ const EscrowWalletService = require("./services/escrowWalletService");
 const AuthController = require("./controllers/authController");
 
 const app = express();
-const PORT = process.env.TWITTER_SERVICE_PORT || 5051; // Different port from main API
+const PORT = process.env.PORT || process.env.TWITTER_SERVICE_PORT || 5051; // Use Heroku's PORT first
 
 // Initialize services
 let xService = null;

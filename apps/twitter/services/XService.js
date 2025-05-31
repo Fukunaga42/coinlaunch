@@ -178,13 +178,18 @@ class XService {
   // Setup stream rules
   async setupRules() {
     try {
+      console.log('🔧 Setting up Twitter stream rules...');
+      
       // Delete existing rules
       const getRulesResponse = await this.apiClient.get(this.rulesUrl, {
         headers: this.attachAppBearerToken()
       });
 
+      console.log('📋 Current rules:', getRulesResponse.data);
+
       if (getRulesResponse.data.data) {
         const ids = getRulesResponse.data.data.map(rule => rule.id);
+        console.log('🗑️  Deleting existing rules:', ids);
         await this.apiClient.post(this.rulesUrl, {
           delete: { ids }
         }, {
@@ -193,18 +198,26 @@ class XService {
       }
 
       // Add new rule
-      await this.apiClient.post(this.rulesUrl, {
-        add: [{
-          value: '@coinlaunchnow "launch"',
-          tag: 'launch-token-mentions'
-        }]
+      const newRule = {
+        value: '@coinlaunchnow "launch"',
+        tag: 'launch-token-mentions'
+      };
+      
+      console.log('➕ Adding new rule:', newRule);
+      
+      const addRuleResponse = await this.apiClient.post(this.rulesUrl, {
+        add: [newRule]
       }, {
         headers: this.attachAppBearerToken()
       });
 
-      console.log('✅ Twitter stream rules configured');
+      console.log('✅ Rule added response:', addRuleResponse.data);
+      console.log('✅ Twitter stream rules configured - Listening for:', newRule.value);
     } catch (error) {
       console.error('❌ Error setting up rules:', error.response?.data || error.message || error);
+      if (error.response?.data) {
+        console.error('❌ Full error details:', JSON.stringify(error.response.data, null, 2));
+      }
     }
   }
 
@@ -212,11 +225,14 @@ class XService {
   async processTweet(tweet) {
     console.log('📨 Processing tweet:', tweet.data.id);
     console.log('📝 Tweet text:', tweet.data.text);
+    console.log('👤 Author ID:', tweet.data.author_id);
+    console.log('📅 Created at:', tweet.data.created_at);
     
     const extraction = this.extractTokenData(tweet.data.text);
     
     if (!extraction.success) {
       console.log('❌ Invalid tweet format:', extraction.error);
+      console.log('💡 Expected format: @coinlaunchnow launch $NAME $SYMBOL');
       return;
     }
 
@@ -318,6 +334,8 @@ class XService {
       throw new Error('X_APP_BEARER_TOKEN or TWITTER_BEARER_TOKEN environment variable is required');
     }
     
+    console.log('🔍 Starting Twitter stream with bearer token:', bearerToken ? 'Bearer ' + bearerToken.substring(0, 20) + '...' : 'NOT SET');
+    
     // Mock mode for testing
     if (XService.ShouldMock) {
       console.log('🎭 Running in MOCK mode - simulating Twitter stream');
@@ -348,6 +366,8 @@ class XService {
 
     const streamUrl = `${this.streamUrl}?tweet.fields=author_id,created_at&expansions=author_id,attachments.media_keys&media.fields=url,type`;
     
+    console.log('📡 Connecting to Twitter stream URL:', `https://api.twitter.com/${streamUrl}`);
+    
     const streamResponse = await this.apiClient.get(streamUrl, {
       headers: this.attachAppBearerToken(),
       responseType: 'stream'
@@ -356,6 +376,8 @@ class XService {
     this.stream = streamResponse.data;
     let buffer = '';
 
+    console.log('📊 Stream connected, waiting for tweets mentioning @coinlaunchnow...');
+
     this.stream.on('data', (chunk) => {
       buffer += chunk.toString();
       const lines = buffer.split('\n');
@@ -363,10 +385,18 @@ class XService {
 
       for (const line of lines) {
         if (line.trim()) {
+          console.log('📨 Raw stream data received:', line.substring(0, 100) + (line.length > 100 ? '...' : ''));
           try {
             const data = JSON.parse(line);
             if (data.data) {
+              console.log('🐦 Tweet detected:', {
+                id: data.data.id,
+                text: data.data.text,
+                author_id: data.data.author_id
+              });
               this.processTweet(data);
+            } else if (data.errors) {
+              console.error('❌ Twitter API error:', data.errors);
             }
           } catch (error) {
             console.error('Error parsing tweet:', error.message || error);
@@ -389,7 +419,7 @@ class XService {
       setTimeout(() => this.startStream(), 5000);
     });
 
-    console.log('🎧 Twitter stream started');
+    console.log('🎧 Twitter stream started - Listening for mentions of @coinlaunchnow');
   }
 
   // Stop the stream
