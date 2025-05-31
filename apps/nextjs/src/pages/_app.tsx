@@ -25,7 +25,7 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 const PRIVY_APP_ID: string = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "";
-console.log("privy app id", PRIVY_APP_ID);
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig config={config}>
