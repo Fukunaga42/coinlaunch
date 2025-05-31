@@ -191,6 +191,11 @@ class TokenMinterService {
                 }
             );
             
+            // Store transaction hash immediately
+            await Token.findByIdAndUpdate(tokenId, {
+                mintTransactionHash: tx.hash
+            });
+            
             console.log(`⏳ Waiting for transaction confirmation...`);
             const receipt = await tx.wait();
             
@@ -216,12 +221,12 @@ class TokenMinterService {
                 escrowWallet: escrowAddress.toLowerCase(),
                 logo: ipfsImageUrl,
                 status: 'MINTED',
-                mintedAt: new Date(),
-                mintTransactionHash: receipt.transactionHash
+                mintedAt: new Date()
+                // mintTransactionHash already set above
             });
             
-            // Trigger comment on Twitter
-            await this.triggerTwitterComment(tokenId, tokenAddress);
+            // Remove trigger comment - DBListenerService will handle it
+            // await this.triggerTwitterComment(tokenId, tokenAddress);
             
             return {
                 success: true,

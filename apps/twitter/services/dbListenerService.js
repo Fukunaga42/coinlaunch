@@ -1,6 +1,7 @@
 const Token = require('../models/Token');
 const TokenMinterService = require('./tokenMinter');
 const TwitterCommenterService = require('./twitterCommenter');
+const { ethers } = require('ethers');
 
 class DBListenerService {
     constructor(tokenMinter = null, twitterCommenter = null) {
@@ -10,7 +11,12 @@ class DBListenerService {
         
         this.isRunning = false;
         this.intervalId = null;
-        this.pollingInterval = parseInt(process.env.DB_POLLING_INTERVAL) || 5000; // 5 seconds default
+        this.pollingInterval = parseInt(process.env.DB_POLLING_INTERVAL) || 1000; // 1 seconds default
+        
+        // Initialize provider for on-chain checks
+        if (process.env.ETH_RPC_URL) {
+            this.provider = new ethers.providers.JsonRpcProvider(process.env.ETH_RPC_URL);
+        }
         
         console.log('🔄 DBListenerService initialized');
     }
@@ -65,24 +71,71 @@ class DBListenerService {
                 }
             }
 
-            // Find tokens that are minted but not commented
-            const tokensToComment = await Token.find({ 
+            // Check tokens that are MINTING (verify on-chain status)
+            const tokensInMinting = await Token.find({ 
+                status: 'MINTING',
+                mintTransactionHash: { $exists: true, $ne: null }
+            });
+
+            if (tokensInMinting.length > 0 && this.provider) {
+                console.log(`🔍 Checking ${tokensInMinting.length} tokens with MINTING status`);
+                
+                for (const token of tokensInMinting) {
+                    await this.checkOnChainStatus(token);
+                }
+            }
+
+            // Find tokens that are MINTED but not yet set to COMMENTING
+            const tokensToSetCommenting = await Token.find({ 
                 status: 'MINTED',
                 address: { $exists: true, $ne: null }
             })
             .sort({ createdAt: 1 })
             .limit(5);
 
-            if (tokensToComment.length > 0) {
-                console.log(`🔍 Found ${tokensToComment.length} tokens awaiting comment`);
+            if (tokensToSetCommenting.length > 0) {
+                console.log(`🔍 Found ${tokensToSetCommenting.length} tokens ready for commenting`);
                 
-                for (const token of tokensToComment) {
+                for (const token of tokensToSetCommenting) {
+                    // Update status to COMMENTING before calling the commenter
+                    await Token.findByIdAndUpdate(token._id, { status: 'COMMENTING' });
                     await this.commentOnToken(token);
                 }
             }
 
         } catch (error) {
             console.error('❌ Error in DBListenerService:', error);
+        }
+    }
+
+    // Check on-chain status of a minting transaction
+    async checkOnChainStatus(token) {
+        try {
+            if (!token.mintTransactionHash || !this.provider) {
+                return;
+            }
+
+            console.log(`🔍 Checking on-chain status for ${token.name} (tx: ${token.mintTransactionHash})`);
+            
+            const receipt = await this.provider.getTransactionReceipt(token.mintTransactionHash);
+            
+            if (receipt) {
+                if (receipt.status === 1) {
+                    // Transaction succeeded - already handled by tokenMinter
+                    console.log(`✅ Transaction confirmed for ${token.name}`);
+                } else {
+                    // Transaction failed
+                    console.log(`❌ Transaction failed for ${token.name}`);
+                    await Token.findByIdAndUpdate(token._id, {
+                        status: 'FAILED',
+                        processingError: 'Mint transaction failed on-chain'
+                    });
+                }
+            }
+            // If no receipt yet, transaction is still pending - will check again next poll
+            
+        } catch (error) {
+            console.error(`❌ Error checking on-chain status for token ${token._id}:`, error);
         }
     }
 

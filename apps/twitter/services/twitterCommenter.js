@@ -49,8 +49,7 @@ class TwitterCommenterService {
                 throw new Error('No Twitter post ID associated with this token');
             }
 
-            // Update status to COMMENTING
-            await Token.findByIdAndUpdate(tokenId, { status: 'COMMENTING' });
+            // Status is already set to COMMENTING by DBListenerService
 
             // Compose the comment
             const commentText = `🚀 Your token ${token.name} ($${token.symbol}) has been deployed!\n\n` +

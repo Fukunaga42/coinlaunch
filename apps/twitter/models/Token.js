@@ -14,7 +14,7 @@ const tokenSchema = new mongoose.Schema({
     youtube: String,
     status: { 
         type: String, 
-        enum: ['AWAITING_MINT', 'MINTING', 'MINTED', 'COMMENTED', 'FAILED'], 
+        enum: ['AWAITING_MINT', 'MINTING', 'MINTED', 'COMMENTING', 'COMMENTED', 'FAILED', 'COMMENT_FAILED'], 
         default: 'AWAITING_MINT' 
     },
     xPostId: { type: String, unique: true, sparse: true },
