@@ -213,18 +213,12 @@ class EscrowWalletService {
         }
     }
 
-    // Verify Twitter account ownership via Privy
-    async verifyTwitterOwnership(privyUserId, twitterUsername) {
-        // This should integrate with Privy to verify the user owns the Twitter account
-        // For now, it's a placeholder
-        console.log(`🔍 Verifying @${twitterUsername} ownership for Privy user ${privyUserId}`);
-        
-        // In production:
-        // 1. Call Privy API to get user's linked Twitter account
-        // 2. Verify it matches the requested username
-        // 3. Return verification result
-        
-        return true; // Placeholder
+    // Verify Twitter account ownership
+    async verifyTwitterOwnership(userId, twitterUsername) {
+        // TODO: This method will be implemented by the Privy team
+        // For now, return false to prevent unauthorized access
+        console.log(`🔍 Twitter ownership verification pending implementation for @${twitterUsername}`);
+        return false;
     }
 }
 

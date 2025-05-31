@@ -7,7 +7,6 @@ const TwitterCommenterService = require("./services/twitterCommenter");
 const DBListenerService = require("./services/dbListenerService");
 const EscrowWalletService = require("./services/escrowWalletService");
 const AuthController = require("./controllers/authController");
-const authenticateWithPrivy = require("./middleware/authenticateWithPrivy");
 
 const app = express();
 const PORT = process.env.TWITTER_SERVICE_PORT || 5051; // Different port from main API
@@ -41,23 +40,22 @@ app.get("/auth/twitter/login", AuthController.generateAuthUrl);
 app.get("/auth/twitter/callback", AuthController.handleCallback);
 app.get("/auth/twitter/status", AuthController.checkAuthStatus);
 
-// Claim fees endpoints
-app.get("/claim-fees/check/:twitterUsername", authenticateWithPrivy, async (req, res) => {
+// Claim fees endpoints - Simplified without Privy
+// NOTE: These endpoints are temporarily simplified. 
+// Another team is building the Privy authentication part.
+app.get("/claim-fees/check/:twitterUsername", async (req, res) => {
   try {
     const { twitterUsername } = req.params;
-    const privyUser = req.user;
     
     console.log(`💰 Checking claimable fees for @${twitterUsername}`);
     
-    const isOwner = await escrowWallet.verifyTwitterOwnership(privyUser.id, twitterUsername);
-    if (!isOwner) {
-      return res.status(403).json({ error: "You don't own this Twitter account" });
-    }
-    
+    // TODO: When Privy integration is ready, verify ownership
+    // For now, just return the claimable info
     const claimableInfo = await escrowWallet.getClaimableFees(twitterUsername);
     
     res.json({
       success: true,
+      warning: "Authentication not implemented yet",
       ...claimableInfo
     });
     
@@ -67,10 +65,9 @@ app.get("/claim-fees/check/:twitterUsername", authenticateWithPrivy, async (req,
   }
 });
 
-app.post("/claim-fees/claim", authenticateWithPrivy, async (req, res) => {
+app.post("/claim-fees/claim", async (req, res) => {
   try {
     const { twitterUsername, destinationAddress } = req.body;
-    const privyUser = req.user;
     
     if (!twitterUsername || !destinationAddress) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -78,16 +75,11 @@ app.post("/claim-fees/claim", authenticateWithPrivy, async (req, res) => {
     
     console.log(`💸 Processing claim for @${twitterUsername} to ${destinationAddress}`);
     
-    const isOwner = await escrowWallet.verifyTwitterOwnership(privyUser.id, twitterUsername);
-    if (!isOwner) {
-      return res.status(403).json({ error: "You don't own this Twitter account" });
-    }
-    
-    const result = await escrowWallet.claimFees(twitterUsername, destinationAddress);
-    
-    res.json({
-      success: true,
-      ...result
+    // TODO: When Privy integration is ready, verify ownership
+    // For now, return error
+    res.status(501).json({ 
+      error: "Claim functionality not available yet",
+      message: "Privy authentication integration pending"
     });
     
   } catch (error) {

@@ -1,114 +1,159 @@
 # CoinLaunch Twitter Service
 
-Cette app gère l'intégration Twitter pour CoinLaunch, permettant la création de tokens via des mentions Twitter.
+This service handles Twitter integration for CoinLaunch - monitoring Twitter mentions to create tokens and posting replies with contract addresses.
 
-## 🚀 Fonctionnalités
+## Features
 
-- **Écoute des mentions Twitter** : Détecte `@coinlaunchnow launch <name> <symbol>`
-- **Création automatique de tokens** : Via escrow wallets uniques par utilisateur
-- **Commentaires automatiques** : Répond avec l'adresse du contrat
-- **Système de claim fees** : Les créateurs peuvent réclamer leurs fees accumulés
+- 🐦 **Twitter Streaming**: Monitors mentions of @coinlaunchnow in real-time
+- 🔄 **OAuth2 Authentication**: Full OAuth2 flow for posting replies
+- 💰 **Escrow Wallets**: Creates encrypted wallets for each Twitter user
+- 🏦 **Fee Management**: Tracks claimable fees for token creators
+- 🚀 **Auto-minting**: Automatically mints tokens when valid launch tweets are detected
 
-## 📋 Prérequis
+## Architecture
 
-- Node.js 18+
-- MongoDB (partagé avec l'app API principale)
-- Compte Twitter Developer avec API v2
-- Wallet Ethereum avec ETH pour financer les escrow wallets
-
-## 🔧 Installation
-
-Depuis la racine du monorepo :
-
-```bash
-# Installer les dépendances
-pnpm install
-
-# Ou pour cette app uniquement
-cd apps/twitter
-npm install
+```
+Twitter Stream API → XService → Database → DBListener → TokenMinter → Twitter Reply
+                                                     ↓
+                                              Escrow Wallet
 ```
 
-## ⚙️ Configuration
+## Setup
 
-1. Copiez `env.example` vers `.env` :
+1. **Install dependencies**:
    ```bash
-   cp env.example .env
+   npm install
    ```
 
-2. Remplissez les variables d'environnement (voir env.example)
+2. **Configure environment variables**:
+   ```bash
+   cp env.example .env
+   # Edit .env with your values
+   ```
 
-## 🏃 Démarrage
+3. **Set up MongoDB**:
+   - Ensure MongoDB is running locally or provide a remote URI
+   - The service will create required collections automatically
 
-### Depuis la racine du monorepo :
+4. **Twitter OAuth2 Setup**:
+   - Create a Twitter App at https://developer.twitter.com
+   - Set OAuth 2.0 settings with callback URL: `http://localhost:5051/auth/twitter/callback`
+   - Add your Client ID and Client Secret to `.env`
+
+5. **Start the service**:
+   ```bash
+   npm start
+   ```
+
+6. **Authenticate with Twitter**:
+   - Visit `http://localhost:5051/auth/twitter/login`
+   - Complete the OAuth2 flow
+   - The service will save tokens for posting replies
+
+## API Endpoints
+
+### Health & Status
+- `GET /` - Health check
+- `GET /auth/twitter/status` - Check Twitter authentication status
+
+### Twitter OAuth2
+- `GET /auth/twitter/login` - Start OAuth2 flow
+- `GET /auth/twitter/callback` - OAuth2 callback (handled automatically)
+
+### Fee Management (Pending Authentication)
+- `GET /claim-fees/check/:twitterUsername` - Check claimable fees
+- `POST /claim-fees/claim` - Claim accumulated fees (Not implemented - waiting for authentication module)
+
+### Testing (Dev Only)
+- `POST /test/mint-token` - Manually trigger token minting
+- `POST /test/comment-tweet` - Test Twitter reply functionality
+
+## Environment Variables
+
+```env
+# Service Configuration
+TWITTER_SERVICE_PORT=5051
+
+# MongoDB
+MONGO_URI=mongodb://localhost:27017
+MONGO_DB_NAME=coinlaunch
+
+# Ethereum
+ETHEREUM_RPC_URL=https://base.publicnode.com
+FUNDING_PRIVATE_KEY=<wallet_private_key_for_gas_funding>
+
+# Contract
+BONDING_CURVE_MANAGER_ADDRESS=<deployed_contract_address>
+
+# Escrow Encryption
+ESCROW_ENCRYPTION_KEY=<32_character_encryption_key>
+
+# Twitter OAuth2
+X_CLIENT_ID=<your_twitter_client_id>
+X_CLIENT_SECRET=<your_twitter_client_secret>
+X_OAUTH_2_REDIRECT_URL=http://localhost:5051/auth/twitter/callback
+
+# Feature Flags
+ENABLE_TWITTER_LISTENER=true
+ENABLE_DB_LISTENER=true
+```
+
+## How It Works
+
+1. **Twitter Mention Detection**:
+   - Users tweet "@coinlaunchnow launch TokenName SYMBOL"
+   - XService detects the mention via Twitter Stream API
+   - Creates a token record in MongoDB with status AWAITING_MINT
+
+2. **Token Minting**:
+   - DBListener polls for AWAITING_MINT tokens
+   - Creates/retrieves escrow wallet for the Twitter user
+   - Funds escrow wallet with gas if needed
+   - Mints token from escrow wallet (creator = escrow wallet)
+   - Updates token status to MINTED
+
+3. **Twitter Reply**:
+   - TwitterCommenter uses OAuth2 tokens to reply
+   - Posts contract address as a reply to original tweet
+
+4. **Fee Collection**:
+   - Trading fees accumulate in escrow wallets
+   - Users can check claimable fees (authentication pending)
+   - Users can claim fees to their wallet (authentication pending)
+
+## Testing
+
+Run the test suite:
 ```bash
-pnpm dev --filter @coinlaunch/twitter
+npm test
 ```
 
-### Ou directement :
-```bash
-cd apps/twitter
-npm run dev
-```
+This will run `test-system.js` which verifies:
+- MongoDB connection
+- Twitter OAuth2 authentication
+- Escrow wallet creation and encryption
+- Token minting simulation
+- Twitter commenting simulation
 
-## 🔗 Intégration avec les autres apps
+## Notes
 
-### Partage de la base de données
+- **Authentication Module**: The fee claiming functionality requires user authentication which is being developed by another team
+- **Mock Mode**: Set `X_MOCK_MODE=true` to test without real Twitter API calls
+- **Gas Management**: Ensure funding wallet has sufficient ETH for gas fees
 
-Cette app partage MongoDB avec l'app API principale. Les modèles `Token` et `EscrowWallet` sont utilisés par les deux services.
+## Troubleshooting
 
-### Communication entre services
+### Twitter Auth Issues
+- Ensure OAuth2 callback URL matches exactly
+- Check Client ID and Secret are correct
+- Delete `tokens-development.json` to reset auth
 
-- **API principale** (port 5050) : Gère les tokens, trading, etc.
-- **Twitter Service** (port 5051) : Gère l'intégration Twitter
+### Minting Failures
+- Verify contract address is deployed on the correct network
+- Check funding wallet has ETH
+- Ensure RPC URL is accessible
 
-Les deux services peuvent accéder aux mêmes données dans MongoDB.
-
-## 📡 Endpoints
-
-### OAuth2 Twitter
-- `GET /auth/twitter/login` - Initier l'authentification
-- `GET /auth/twitter/callback` - Callback OAuth2
-- `GET /auth/twitter/status` - Vérifier le statut
-
-### Claim Fees (Requiert auth Privy)
-- `GET /claim-fees/check/:twitterUsername` - Vérifier les fees
-- `POST /claim-fees/claim` - Réclamer les fees
-
-### Test (Dev only)
-- `POST /test/mint-token` - Tester le minting
-- `POST /test/comment-tweet` - Tester les commentaires
-
-## 🧪 Mode Mock
-
-Pour tester sans API Twitter réelle, dans `services/XService.js` :
-```javascript
-static ShouldMock = true;
-```
-
-## 🏗️ Architecture
-
-```
-apps/twitter/
-├── services/           # Services métier
-│   ├── XService.js     # Intégration Twitter
-│   ├── dbListenerService.js # Polling DB
-│   ├── tokenMinter.js  # Minting sur Ethereum
-│   └── escrowWalletService.js # Gestion des wallets
-├── models/            # Modèles MongoDB
-├── controllers/       # Controllers Express
-├── middleware/        # Middleware (Privy auth)
-└── abi/              # Smart contract ABIs
-```
-
-## 🔐 Sécurité
-
-- Les clés privées des escrow wallets sont chiffrées en DB
-- OAuth2 pour poster des réponses Twitter
-- Authentification Privy pour les claim fees
-
-## 📝 Notes
-
-- Ce service peut tourner indépendamment ou avec l'API principale
-- Les tokens OAuth2 sont stockés dans `tokens-{NODE_ENV}.json`
-- Le DB polling vérifie toutes les 5 secondes par défaut 
+### MongoDB Connection
+- Verify MongoDB is running
+- Check connection string in `.env`
+- Ensure database user has write permissions 
