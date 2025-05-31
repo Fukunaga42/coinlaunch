@@ -32,7 +32,7 @@ const TYPEWRITER_TEXTS = [
 const Home: React.FC = () => {
   const [tokens, setTokens] = useState<PaginatedResponse<Token | TokenWithLiquidityEvents> | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sort, setSort] = useState<SortOption>('trending');
+  const [sort, setSort] = useState<SortOption>('new');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [noRecentTokens, setNoRecentTokens] = useState(false);
