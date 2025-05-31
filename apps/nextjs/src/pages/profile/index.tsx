@@ -232,6 +232,7 @@ const ProfilePage: React.FC = () => {
 
       setIsLoading(true);
       try {
+        console.log("🔍 Fetching tokens for creator:", twitterId);
         const response = await getTokensByCreator(creatorAddress, page);
         setCreatedTokens(response.tokens);
         setCreatedTokensTotalPages(response.totalPages);
