@@ -20,7 +20,7 @@ const HowItWorksPopup: React.FC<HowItWorksPopupProps> = ({ isVisible, onClose })
       icon: Twitter,
       text: (
           <>
-            Post on X: <span className="text-white font-medium">Tag @coinlaunchnow with <code>$SYMBOL</code></span>
+            Post on X: <span className="text-white font-medium">Tag @coinlaunchnow with <code>$SYMBOL</code> and NAME</span>
           </>
       ),
     },
@@ -68,7 +68,7 @@ const HowItWorksPopup: React.FC<HowItWorksPopupProps> = ({ isVisible, onClose })
             </h2>
 
             <p className="text-gray-400 text-center mb-6">
-              Tag <code>@coinlaunchnow</code> on X with your <code>$SYMBOL</code> to auto-deploy your token on-chain.
+              Tag <code>@coinlaunchnow</code> on X with your <code>$SYMBOL and NAME</code> to auto-deploy your token on-chain.
               No code. No insiders. Full transparency.
             </p>
 
