@@ -14,13 +14,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Route mounting
 app.use("/upload-to-ipfs", uploadRoute);
 app.get("/", (req, res) => {
   console.log("👋 Root route hit");
   res.send("Hackathon is up and running!");
 });
-
+app.get("/privy", authenticateWithPrivy, async (req, res) => {
+  return res.status(HttpStatusCode.Ok).json({
+    success: true,
+    message: "Authentication successful",
+  });
+});
 // Start server after DB is ready
 connectDB().then(() => {
   console.log("✅ MongoDB connected");
