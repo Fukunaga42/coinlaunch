@@ -46,13 +46,22 @@ class TwitterCommenterService {
 
             // Status is already set to COMMENTING by DBListenerService
 
-            // Compose the comment
-            const commentText = `🚀 Your token ${token.name} ($${token.symbol}) has been deployed!\n\n` +
-                               `Contract: ${tokenAddress}\n` +
-                               `View on Etherscan: https://etherscan.io/token/${tokenAddress}\n\n` +
-                               `Start trading now! 💎`;
+            // Compose the comment - Twitter has 280 char limit
+            // Worst case: name=32 chars, symbol=10 chars, address=42 chars
+            let commentText = `🚀 ${token.name} ($${token.symbol}) deployed!\n\n` +
+                               `📜 ${tokenAddress}\n\n` +
+                               `🔍 eth-sepolia.blockscout.com/address/${tokenAddress}`;
 
-            console.log(`💬 Posting comment for token ${token.name}...`);
+            // Check length
+            if (commentText.length > 280) {
+                console.warn(`⚠️ Comment too long (${commentText.length} chars), truncating...`);
+                // Fallback to shorter version
+                const shortComment = `🚀 $${token.symbol} deployed!\n\n` +
+                                   `🔍 eth-sepolia.blockscout.com/address/${tokenAddress}`;
+                commentText = shortComment;
+            }
+
+            console.log(`💬 Posting comment for token ${token.name} (${commentText.length} chars)...`);
             
             // Post the reply
             const replyOptions = {
