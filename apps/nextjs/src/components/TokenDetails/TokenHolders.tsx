@@ -88,7 +88,7 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({
           <tr className="border-b border-[var(--card-hover)]">
             <td className="px-4 py-2">
               <a
-                href={`${process.env.NEXT_PUBLIC_BLOCKSCOUT_URL}/address/${bondingCurveAddress}`}
+                href={`https://eth-sepolia.blockscout.com/address/${bondingCurveAddress}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-[var(--primary)] text-sm flex items-center gap-1 transition-colors"
@@ -105,7 +105,7 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({
               <td className="px-4 py-2">
                 {holder.address === creatorAddress ? (
                   <a
-                    href={`${process.env.NEXT_PUBLIC_BLOCKSCOUT_URL}/address/${holder.address}`}
+                    href={`https://eth-sepolia.blockscout.com/address/${holder.address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-[var(--primary)] text-sm flex items-center gap-1 transition-colors"
@@ -114,7 +114,7 @@ const TokenHolders: React.FC<TokenHoldersProps> = ({
                   </a>
                 ) : (
                   <a
-                    href={`${process.env.NEXT_PUBLIC_BLOCKSCOUT_URL}/address/${holder.address}`}
+                    href={`https://eth-sepolia.blockscout.com/address/${holder.address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-[var(--primary)] text-sm flex items-center gap-1 transition-colors"
