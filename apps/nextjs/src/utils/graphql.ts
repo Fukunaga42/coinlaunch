@@ -61,6 +61,22 @@ export interface SubgraphTokenResponse {
   token: SubgraphToken | null;
 }
 
+export interface SubgraphLiquidityEvent {
+  id: string;
+  hash: string;
+  ethAmount: string;
+  tokenAmount: string;
+  timestamp: string;
+}
+
+export interface SubgraphLiquidityEventsResponse {
+  transactions: SubgraphLiquidityEvent[];
+}
+
+export interface SubgraphLiquidityEventCountResponse {
+  transactions: { id: string }[];
+}
+
 // GraphQL queries
 const GET_TOKEN_TRANSACTIONS = gql`
   query GetTokenTransactions($tokenAddress: Bytes!, $first: Int!, $skip: Int!) {
@@ -132,6 +148,32 @@ const GET_TOKEN_BY_ADDRESS = gql`
       totalVolume
       totalSupply
       isGraduated
+    }
+  }
+`;
+
+const GET_TOKEN_LIQUIDITY_EVENTS = gql`
+  query GetTokenLiquidityEvents($tokenAddress: Bytes!, $first: Int!, $skip: Int!) {
+    transactions(
+      where: { token: $tokenAddress, type: GRADUATE }
+      orderBy: timestamp
+      orderDirection: desc
+      first: $first
+      skip: $skip
+    ) {
+      id
+      hash
+      ethAmount
+      tokenAmount
+      timestamp
+    }
+  }
+`;
+
+const GET_TOKEN_LIQUIDITY_EVENT_COUNT = gql`
+  query GetTokenLiquidityEventCount($tokenAddress: Bytes!) {
+    transactions(where: { token: $tokenAddress, type: GRADUATE }) {
+      id
     }
   }
 `;
@@ -350,6 +392,66 @@ export async function fetchRecentTokens(
   } catch (error) {
     console.error('Error fetching recent tokens from The Graph:', error);
     throw new Error(`Failed to fetch recent tokens: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+// Transform subgraph liquidity event to app liquidity event format
+export function transformSubgraphLiquidityEvent(subgraphEvent: SubgraphLiquidityEvent): import('@/interface/types').LiquidityEvent {
+  return {
+    id: subgraphEvent.id,
+    ethAmount: convertDecimalToWei(subgraphEvent.ethAmount, 18),
+    tokenAmount: convertDecimalToWei(subgraphEvent.tokenAmount, 18),
+    timestamp: (parseInt(subgraphEvent.timestamp) * 1000).toString(),
+  };
+}
+
+// Fetch token liquidity events with pagination from The Graph
+export async function fetchTokenLiquidityEvents(
+  tokenAddress: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<{
+  liquidityEvents: import('@/interface/types').LiquidityEvent[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+}> {
+  try {
+    const skip = (page - 1) * limit;
+    
+    // Fetch liquidity events and count in parallel
+    const [eventsResponse, countResponse] = await Promise.all([
+      graphqlClient.request<SubgraphLiquidityEventsResponse>(GET_TOKEN_LIQUIDITY_EVENTS, {
+        tokenAddress: tokenAddress.toLowerCase(),
+        first: limit,
+        skip: skip,
+      }),
+      graphqlClient.request<SubgraphLiquidityEventCountResponse>(GET_TOKEN_LIQUIDITY_EVENT_COUNT, {
+        tokenAddress: tokenAddress.toLowerCase(),
+      }),
+    ]);
+
+    const totalItems = countResponse.transactions.length;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    // Transform liquidity events to match current format
+    const transformedEvents = eventsResponse.transactions.map(transformSubgraphLiquidityEvent);
+
+    return {
+      liquidityEvents: transformedEvents,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching liquidity events from The Graph:', error);
+    throw new Error(`Failed to fetch liquidity events: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

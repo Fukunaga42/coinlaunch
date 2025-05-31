@@ -21,19 +21,23 @@
   }
 
   const PriceChart: React.FC<PriceChartProps> = ({ data, liquidityEvents, tokenInfo }) => {
+    console.log('PriceChart data:', data);
     // check data coming in
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const [chart, setChart] = useState<IChartApi | null>(null);
     const [showUniswapInfo, setShowUniswapInfo] = useState<boolean | null>(null);
 
     useEffect(() => {
-      if (liquidityEvents) {
-        setShowUniswapInfo(liquidityEvents.liquidityEvents.length > 0);
+      if (liquidityEvents !== null) {
+        setShowUniswapInfo(liquidityEvents.liquidityEvents && liquidityEvents.liquidityEvents.length > 0);
+      } else {
+        // If liquidityEvents is null, default to false to show the chart
+        setShowUniswapInfo(false);
       }
     }, [liquidityEvents]);
 
     useEffect(() => {
-      if (chartContainerRef.current && data.length >= 2 && showUniswapInfo === false) {
+      if (chartContainerRef.current && data.length >= 2 ) {
         const newChart: IChartApi = createChart(chartContainerRef.current, {
           width: chartContainerRef.current.clientWidth,
           height: 500,
@@ -184,7 +188,7 @@
       );
     }
 
-    if (showUniswapInfo && liquidityEvents.liquidityEvents.length > 0) {
+    if (showUniswapInfo && liquidityEvents && liquidityEvents.liquidityEvents && liquidityEvents.liquidityEvents.length > 0) {
       const event = liquidityEvents.liquidityEvents[0];
       return (
         <div className="w-full h-[500px] bg-gray-800 rounded-lg overflow-hidden flex flex-col items-center justify-center p-6">

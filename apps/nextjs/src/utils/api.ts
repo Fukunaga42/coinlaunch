@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { Token, TokenWithLiquidityEvents, PaginatedResponse, LiquidityEvent, TokenWithTransactions, PriceResponse, HistoricalPrice, USDHistoricalPrice, TokenHolder, TransactionResponse } from '@/interface/types';
 import { ethers } from 'ethers';
-import { fetchTokenTransactions, fetchTokenPriceHistory, fetchRecentTokens, fetchTokenByAddress } from './graphql';
+import { fetchTokenTransactions, fetchTokenPriceHistory, fetchRecentTokens, fetchTokenByAddress, fetchTokenLiquidityEvents } from './graphql';
 
 
 export async function getAllTokens(page: number = 1, pageSize: number = 13): Promise<PaginatedResponse<Token>> {
@@ -95,10 +95,22 @@ export async function getTokenByAddress(address: string): Promise<Token> {
 }
 
 export async function getTokenLiquidityEvents(tokenId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<LiquidityEvent>> {
-  const response = await axios.get('/api/ports/getTokenLiquidityEvents', {
-    params: { tokenId, page, pageSize }
-  });
-  return response.data;
+  try {
+    console.log('Fetching liquidity events from subgraph for token:', tokenId);
+    const result = await fetchTokenLiquidityEvents(tokenId, page, pageSize);
+    
+    // Transform the result to match the expected PaginatedResponse format
+    return {
+      data: result.liquidityEvents,
+      totalCount: result.pagination.totalItems,
+      currentPage: result.pagination.currentPage,
+      totalPages: result.pagination.totalPages,
+      tokens: [] // Legacy field, kept for compatibility
+    };
+  } catch (error) {
+    console.error('Error fetching liquidity events from subgraph:', error);
+    throw new Error(`Failed to fetch liquidity events: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 // New function that uses subgraph for token info
