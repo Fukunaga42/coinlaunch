@@ -273,6 +273,10 @@ const ProfilePage: React.FC = () => {
   ]);
 
   useEffect(() => {
+    console.log("📌 Current twitterId state:", twitterId);
+  }, [twitterId]);
+
+  useEffect(() => {
     if (!twitterId || !addressToUse) return;
 
     fetchCreatedTokens(twitterId, createdTokensPage);
