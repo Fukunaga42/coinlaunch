@@ -1,0 +1,10 @@
+{
+  "network": "sepolia",
+  "contractAddress": "0xa8CB415Ad169CA40c0Ca4D318707e77eF577bB38",
+  "transactionHash": "0xc869ba466032e54b03e430f60515b2ea03437684e183e8bccf66b0ac84ca9a65",
+  "deployer": "0xe4d322bff6C3E0C57e1aBd8c66a1C46431ad1EDB",
+  "routerAddress": "0xeE567Fe1712Faf6149d80dA1E6934E354124CfE3",
+  "deployedAt": "2025-05-31T01:13:13.956Z",
+  "gasUsed": "4230282",
+  "estimatedCostEth": "0.00000005416619163"
+}

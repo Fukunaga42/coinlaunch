@@ -1,0 +1,308 @@
+# Minimal GraphQL queries for the EVM BondingCurve subgraph
+# Compatible with simplified schema
+
+# ===== THE GRAPH STUDIO READY QUERIES =====
+# Copy and paste these directly into The Graph Studio
+
+# Get all tokens
+{
+  tokens(first: 20) {
+    id
+    address
+    name
+    symbol
+    creator
+    createdAt
+    totalVolume
+    totalSupply
+    isGraduated
+  }
+}
+
+# Get latest tokens
+{
+  tokens(
+    first: 10
+    orderBy: createdAt
+    orderDirection: desc
+  ) {
+    id
+    address
+    name
+    symbol
+    creator
+    createdAt
+    totalVolume
+    isGraduated
+  }
+}
+
+# Get tokens by creator (replace with actual address)
+{
+  tokens(
+    where: { creator: "0x123" }
+    orderBy: createdAt
+    orderDirection: desc
+  ) {
+    id
+    address
+    name
+    symbol
+    creator
+    createdAt
+    totalVolume
+    totalSupply
+    isGraduated
+  }
+}
+
+# Get token transactions (replace with actual token address)
+{
+  transactions(
+    where: { token: "0x123" }
+    orderBy: timestamp
+    orderDirection: desc
+    first: 100
+  ) {
+    id
+    hash
+    type
+    user
+    ethAmount
+    tokenAmount
+    timestamp
+    blockNumber
+  }
+}
+
+# Get recent transactions
+{
+  transactions(
+    first: 50
+    orderBy: timestamp
+    orderDirection: desc
+  ) {
+    id
+    hash
+    type
+    token {
+      id
+      name
+      symbol
+    }
+    user
+    ethAmount
+    tokenAmount
+    timestamp
+  }
+}
+
+# Get 1-minute price data for a token (replace with actual token address)
+{
+  tokenPriceMinutes(
+    where: { token: "0x123" }
+    orderBy: timestamp
+    orderDirection: asc
+    first: 1000
+  ) {
+    tokenPrice
+    timestamp
+    priceOpen
+    priceClose
+    priceHigh
+    priceLow
+    volume
+    transactions
+  }
+}
+
+# Get price chart data (simplified format for charting)
+{
+  tokenPriceMinutes(
+    where: { token: "0x123" }
+    orderBy: timestamp
+    orderDirection: asc
+    first: 1440
+  ) {
+    tokenPrice
+    timestamp
+  }
+}
+
+# Get top tokens by volume
+{
+  tokens(
+    first: 20
+    orderBy: totalVolume
+    orderDirection: desc
+    where: { totalVolume_gt: "0" }
+  ) {
+    id
+    address
+    name
+    symbol
+    creator
+    totalVolume
+    totalSupply
+    isGraduated
+    createdAt
+  }
+}
+
+# Get graduated tokens
+{
+  tokens(
+    where: { isGraduated: true }
+    first: 20
+    orderBy: createdAt
+    orderDirection: desc
+  ) {
+    id
+    address
+    name
+    symbol
+    creator
+    totalVolume
+    totalSupply
+    createdAt
+  }
+}
+
+# Get active (non-graduated) tokens
+{
+  tokens(
+    where: { 
+      isGraduated: false
+      totalVolume_gt: "0"
+    }
+    orderBy: totalVolume
+    orderDirection: desc
+    first: 20
+  ) {
+    id
+    address
+    name
+    symbol
+    creator
+    totalVolume
+    totalSupply
+    createdAt
+  }
+}
+
+# ===== NAMED QUERIES FOR DEVELOPMENT =====
+
+# Get tokens by creator address
+query GetTokensByCreator($creatorAddress: Bytes!) {
+  tokens(
+    where: { creator: $creatorAddress }
+    orderBy: createdAt
+    orderDirection: desc
+  ) {
+    id
+    address
+    name
+    symbol
+    creator
+    createdAt
+    totalVolume
+    totalSupply
+    isGraduated
+  }
+}
+
+# Get token details
+query GetTokenDetails($tokenAddress: Bytes!) {
+  token(id: $tokenAddress) {
+    id
+    address
+    name
+    symbol
+    creator
+    createdAt
+    createdAtBlock
+    createdTxHash
+    totalVolume
+    totalSupply
+    isGraduated
+  }
+}
+
+# Get all transactions for a token
+query GetTokenTransactions($tokenAddress: Bytes!) {
+  transactions(
+    where: { token: $tokenAddress }
+    orderBy: timestamp
+    orderDirection: desc
+    first: 100
+  ) {
+    id
+    hash
+    type
+    token {
+      id
+      name
+      symbol
+    }
+    user
+    ethAmount
+    tokenAmount
+    timestamp
+    blockNumber
+  }
+}
+
+# Get 1-minute price data for a token
+query GetTokenPriceMinutes($tokenAddress: Bytes!) {
+  tokenPriceMinutes(
+    where: { token: $tokenAddress }
+    orderBy: timestamp
+    orderDirection: asc
+    first: 1000
+  ) {
+    tokenPrice
+    timestamp
+    minute
+    priceOpen
+    priceClose
+    priceHigh
+    priceLow
+    volume
+    transactions
+  }
+}
+
+# Get recent 1-minute price data (last 24 hours)
+query GetRecentTokenPriceMinutes($tokenAddress: Bytes!, $since: BigInt!) {
+  tokenPriceMinutes(
+    where: { 
+      token: $tokenAddress
+      timestamp_gte: $since
+    }
+    orderBy: timestamp
+    orderDirection: asc
+  ) {
+    tokenPrice
+    timestamp
+    priceOpen
+    priceClose
+    priceHigh
+    priceLow
+    volume
+    transactions
+  }
+}
+
+# Get price data for charting (simplified format)
+query GetTokenPriceChart($tokenAddress: Bytes!) {
+  tokenPriceMinutes(
+    where: { token: $tokenAddress }
+    orderBy: timestamp
+    orderDirection: asc
+    first: 1440  # 24 hours of minutes
+  ) {
+    tokenPrice
+    timestamp
+  }
+}
+

@@ -1,0 +1,92 @@
+
+type Token @entity(immutable: false) {
+  id: Bytes!                          # Token contract address
+  address: Bytes!                     # Token contract address
+  creator: Bytes!                     # Creator address (simplified - no User entity for now)
+  name: String!                       # Token name
+  symbol: String!                     # Token symbol
+  createdAt: BigInt!                  # Creation timestamp
+  createdAtBlock: BigInt!             # Creation block number
+  createdTxHash: Bytes!               # Creation transaction hash
+  
+  # Basic metrics only
+  totalVolume: BigDecimal!            # Total trading volume in ETH
+  totalSupply: BigDecimal!            # Current total supply
+  isGraduated: Boolean!               # Whether migrated to Uniswap
+}
+
+type Transaction @entity(immutable: true) {
+  id: Bytes!                          # Transaction hash + log index
+  hash: Bytes!                        # Transaction hash
+  type: TransactionType!              # CREATE, BUY, SELL, GRADUATE
+  token: Token!                       # Related token
+  user: Bytes!                        # User address (simplified)
+  ethAmount: BigDecimal!              # ETH amount
+  tokenAmount: BigDecimal!            # Token amount
+  timestamp: BigInt!                  # Transaction timestamp
+  blockNumber: BigInt!                # Block number
+}
+
+enum TransactionType {
+  CREATE
+  BUY
+  SELL
+  GRADUATE
+}
+
+type TokenPriceMinute @entity(immutable: true) {
+  id: Bytes!                          # token_address + minute_timestamp
+  token: Token!                       # Related token
+  tokenPrice: BigInt!                 # Price in wei (wei per token)
+  timestamp: BigInt!                  # Minute timestamp (rounded down)
+  minute: BigInt!                     # Minute timestamp for easier querying
+  
+  # OHLC data for the minute
+  priceOpen: BigInt!                  # Opening price in wei
+  priceClose: BigInt!                 # Closing price in wei
+  priceHigh: BigInt!                  # Highest price in wei
+  priceLow: BigInt!                   # Lowest price in wei
+  volume: BigDecimal!                 # Volume in that minute (keep as decimal for ETH)
+  transactions: BigInt!               # Number of transactions
+}
+
+
+
+# type DailyStats @entity(immutable: true) {
+#   id: Bytes!                          # Date as YYYY-MM-DD
+#   date: BigInt!                       # Timestamp of day start
+#   volume: BigDecimal!                 # Volume for the day
+#   transactions: BigInt!               # Transactions for the day
+#   activeUsers: BigInt!                # Active users for the day
+#   newTokens: BigInt!                  # New tokens created
+#   graduations: BigInt!                # Tokens graduated
+#   
+#   # Price metrics
+#   avgTokenPrice: BigDecimal!          # Average token price
+#   totalMarketCap: BigDecimal!         # Total market cap of all tokens
+# }
+# 
+# type HourlyStats @entity(immutable: true) {
+#   id: Bytes!                          # Hour timestamp
+#   hour: BigInt!                       # Hour timestamp
+#   volume: BigDecimal!                 # Volume for the hour
+#   transactions: BigInt!               # Transactions for the hour
+#   activeUsers: BigInt!                # Active users for the hour
+#   newTokens: BigInt!                  # New tokens created
+#   graduations: BigInt!                # Tokens graduated
+# }
+# 
+# type TokenHourlyStats @entity(immutable: true) {
+#   id: Bytes!                          # Token address + hour timestamp
+#   token: Token!                       # Related token
+#   hour: BigInt!                       # Hour timestamp
+#   volume: BigDecimal!                 # Volume for the hour
+#   transactions: BigInt!               # Transactions for the hour
+#   activeUsers: BigInt!                # Active users for the hour
+#   priceOpen: BigDecimal!              # Opening price
+#   priceClose: BigDecimal!             # Closing price
+#   priceHigh: BigDecimal!              # Highest price
+#   priceLow: BigDecimal!               # Lowest price
+#   marketCapOpen: BigDecimal!          # Opening market cap
+#   marketCapClose: BigDecimal!         # Closing market cap
+# }

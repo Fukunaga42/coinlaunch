@@ -1,0 +1,18 @@
+{
+  "name": "bondingcureve-subgraph",
+  "version": "1.0.0",
+  "description": "The Graph subgraph for EVM Bonding Curve Manager",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy",
+    "test": "graph test"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.69.0",
+    "@graphprotocol/graph-ts": "0.32.0"
+  },
+  "devDependencies": {
+    "matchstick-as": "0.5.0"
+  }
+}

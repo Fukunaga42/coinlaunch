@@ -1,0 +1,38 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: BondingCurveManager
+    network: sepolia
+    source:
+      address: "0xa8CB415Ad169CA40c0Ca4D318707e77eF577bB38" # Replace with actual deployed contract address
+      abi: BondingCurveManager
+      startBlock: 8442951
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - Transaction
+        - User
+        - Holder
+        - PlatformStats
+        - DailyStats
+        - HourlyStats
+        - TokenHourlyStats
+        - TradingPair
+      abis:
+        - name: BondingCurveManager
+          file: ./abis/BondingCurveManager.json
+      eventHandlers:
+        - event: TokenCreated(indexed address,indexed address,string,string)
+          handler: handleTokenCreated
+        - event: TokensBought(indexed address,indexed address,uint256,uint256)
+          handler: handleTokensBought
+        - event: TokensSold(indexed address,indexed address,uint256,uint256)
+          handler: handleTokensSold
+        - event: LiquidityAdded(indexed address,uint256,uint256)
+          handler: handleLiquidityAdded
+      file: ./src/mapping.ts

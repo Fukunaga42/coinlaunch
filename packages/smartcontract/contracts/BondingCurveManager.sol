@@ -16,21 +16,29 @@ interface IUniswapV2Router02 {
         external
         payable
         returns (uint amountToken, uint amountETH, uint liquidity);
+
     function WETH() external view returns (address);
 }
 
 interface IWETH {
     function deposit() external payable;
+
     function withdraw(uint256) external;
+
     function approve(address spender, uint256 amount) external returns (bool);
+
     function transfer(address to, uint256 value) external returns (bool);
+
     function balanceOf(address owner) external view returns (uint256);
 }
 
 interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
+
     function balanceOf(address account) external view returns (uint256);
+
     function transfer(address to, uint256 value) external returns (bool);
+
     function transferFrom(
         address from,
         address to,
@@ -186,7 +194,7 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         R_TOKEN_RESERVE = 793100000 ether;
         TRADE_FEE_BPS = 100; // 1% fee in basis points
         BPS_DENOMINATOR = 10000;
-        GRADUATION_THRESHOLD = 24 ether; // 24 ETH threshold for graduation
+        GRADUATION_THRESHOLD = 0.5 ether; // ETH threshold for graduation
     }
 
     function create(
@@ -220,16 +228,14 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
             info.rReserveToken -= int256(tokensOut);
 
             token.mintFromFactory(msg.sender, tokensOut);
-            emit TokensBought(
-                address(token),
-                msg.sender,
-                msg.value,
-                tokensOut
-            );
+            emit TokensBought(address(token), msg.sender, msg.value, tokensOut);
             totalFee += fee;
 
             // Check for graduation after initial buy
-            if (info.rReserveEth >= GRADUATION_THRESHOLD && !info.liquidityMigrated) {
+            if (
+                info.rReserveEth >= GRADUATION_THRESHOLD &&
+                !info.liquidityMigrated
+            ) {
                 _migrateToUniswap(address(token));
             }
         }
@@ -280,22 +286,21 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
 
         // Mint tokens to buyer
         PumpToken(info.tokenAddress).mintFromFactory(msg.sender, tokensOut);
-        
+
         // Add fee to total
         totalFee += fee;
 
         emit TokensBought(_token, msg.sender, msg.value, tokensOut);
 
         // Check for automatic graduation after buy
-        if (info.rReserveEth >= GRADUATION_THRESHOLD && !info.liquidityMigrated) {
+        if (
+            info.rReserveEth >= GRADUATION_THRESHOLD && !info.liquidityMigrated
+        ) {
             _migrateToUniswap(_token);
         }
     }
 
-    function sell(
-        address _token,
-        uint256 tokenAmount
-    ) external nonReentrant {
+    function sell(address _token, uint256 tokenAmount) external nonReentrant {
         TokenInfo storage info = tokenInfos[_token];
         require(info.tokenAddress != address(0), "Invalid token");
         require(tokenAmount > 0, "Amount must be greater than 0");
@@ -335,53 +340,41 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
     // Internal function to migrate liquidity to Uniswap
     function _migrateToUniswap(address tokenAddress) internal {
         TokenInfo storage info = tokenInfos[tokenAddress];
-        
+
         // Mark as migrated first to prevent reentrancy
         info.liquidityMigrated = true;
-        
+
         // Calculate tokens to add to liquidity (remaining tokens from bonding curve)
-        uint256 tokensForLP = info.rReserveToken >= 0 ? uint256(info.rReserveToken) : 0;
+        uint256 tokensForLP = info.rReserveToken >= 0
+            ? uint256(info.rReserveToken)
+            : 0;
         uint256 ethForLP = info.rReserveEth;
-        
+
         // Mint remaining tokens to this contract for liquidity
         if (tokensForLP > 0) {
             PumpToken(tokenAddress).mintFromFactory(address(this), tokensForLP);
         }
-        
+
         // Approve router to spend tokens
         if (tokensForLP > 0) {
             IERC20(tokenAddress).approve(uniswapRouter, tokensForLP);
         }
-        
+
         // Add liquidity to Uniswap (simplified - in production you'd want more sophisticated logic)
         if (ethForLP > 0 && tokensForLP > 0) {
-            try IUniswapV2Router02(uniswapRouter).addLiquidityETH{value: ethForLP}(
+            IUniswapV2Router02(uniswapRouter).addLiquidityETH{value: ethForLP}(
                 tokenAddress,
                 tokensForLP,
                 0, // Accept any amount of tokens
                 0, // Accept any amount of ETH
                 address(0), // Burn LP tokens (or send to creator)
                 block.timestamp + 300 // 5 minute deadline
-            ) returns (uint amountToken, uint amountETH, uint liquidity) {
-                emit LiquidityAdded(tokenAddress, amountETH, amountToken);
-            } catch {
-                // If Uniswap fails, still emit LiquidityAdded event for testing
-                emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
-            }
+            );
+            emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
         } else {
             // Even if no liquidity to add, emit event for graduation
             emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
         }
-    }
-
-    function updateReserves(
-        uint256 _vEthReserve,
-        uint256 _vTokenReserve,
-        uint256 _rTokenReserve
-    ) external onlyOwner {
-        V_ETH_RESERVE = _vEthReserve;
-        V_TOKEN_RESERVE = _vTokenReserve;
-        R_TOKEN_RESERVE = _rTokenReserve;
     }
 
     function updateFeeRate(uint256 value) external onlyOwner {
@@ -410,15 +403,12 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         uint256 fee = (ethAmount * TRADE_FEE_BPS) / BPS_DENOMINATOR;
         uint256 netEthIn = ethAmount - fee;
 
-        (
-            uint256 newReserveEth,
-            uint256 newReserveToken
-        ) = _calculateReserveAfterBuyView(
-                info.vReserveEth,
-                info.vReserveToken,
-                netEthIn
-            );
-        
+        uint256 newReserveToken = _calculateReserveAfterBuyView(
+            info.vReserveEth,
+            info.vReserveToken,
+            netEthIn
+        );
+
         return info.vReserveToken - newReserveToken;
     }
 
@@ -428,48 +418,47 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
     ) external view returns (uint256) {
         TokenInfo storage info = tokenInfos[tokenAddress];
         require(info.tokenAddress != address(0), "Invalid token");
-        
+
         uint256 newReserveToken = info.vReserveToken + tokenAmount;
-        uint256 newReserveEth = (info.vReserveEth * info.vReserveToken) / newReserveToken;
-        
+        uint256 newReserveEth = (info.vReserveEth * info.vReserveToken) /
+            newReserveToken;
+
         uint256 grossEthOut = info.vReserveEth - newReserveEth;
         uint256 fee = (grossEthOut * TRADE_FEE_BPS) / BPS_DENOMINATOR;
-        
+
         return grossEthOut - fee;
     }
 
-    function getCurrentTokenPrice(address tokenAddress) external view returns (uint256) {
+    function getCurrentTokenPrice(
+        address tokenAddress
+    ) external view returns (uint256) {
         TokenInfo storage info = tokenInfos[tokenAddress];
         require(info.tokenAddress != address(0), "Invalid token");
-        
+
         // Price = ETH reserve / Token reserve (in wei)
         if (info.vReserveToken == 0) return 0;
         return (info.vReserveEth * 1e18) / info.vReserveToken;
     }
 
-    function getMarketCap(address tokenAddress) external view returns (uint256) {
+    function getMarketCap(
+        address tokenAddress
+    ) external view returns (uint256) {
         TokenInfo storage info = tokenInfos[tokenAddress];
         require(info.tokenAddress != address(0), "Invalid token");
-        
+
         uint256 totalSupply = PumpToken(tokenAddress).totalSupply();
         uint256 price = this.getCurrentTokenPrice(tokenAddress);
-        
+
         return (totalSupply * price) / 1e18;
     }
 
-    function getTokenEthBalance(address tokenAddress) external view returns (uint256) {
+    function getTokenEthBalance(
+        address tokenAddress
+    ) external view returns (uint256) {
         TokenInfo storage info = tokenInfos[tokenAddress];
         require(info.tokenAddress != address(0), "Invalid token");
-        
+
         return info.rReserveEth;
-    }
-
-    function setBancorFormula(address _bancorFormula) external onlyOwner {
-        // Placeholder for bancor formula - not used in current implementation
-    }
-
-    function setFeeRecipient(address payable _newRecipient) external onlyOwner {
-        // Fee recipient is handled by claimFee function
     }
 
     function setLpFeePercentage(uint256 _lpFeePercentage) external onlyOwner {
@@ -478,19 +467,25 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
 
     // Token list functionality
     address[] public tokenListArray;
-    
+
     function tokenList(uint256 index) external view returns (address) {
         require(index < tokenListArray.length, "Index out of bounds");
         return tokenListArray[index];
     }
 
     // Interface-compatible tokens function
-    function tokens(address tokenAddress) external view returns (
-        address token,
-        uint256 tokenbalance,
-        uint256 ethBalance,
-        bool isListed
-    ) {
+    function tokens(
+        address tokenAddress
+    )
+        external
+        view
+        returns (
+            address token,
+            uint256 tokenbalance,
+            uint256 ethBalance,
+            bool isListed
+        )
+    {
         TokenInfo storage info = tokenInfos[tokenAddress];
         return (
             info.tokenAddress,
@@ -505,10 +500,10 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         uint256 reserveEth,
         uint256 reserveToken,
         uint256 ethIn
-    ) internal pure returns (uint256, uint256) {
+    ) internal pure returns (uint256) {
         uint256 newReserveEth = ethIn + reserveEth;
         uint256 newReserveToken = (reserveEth * reserveToken) / newReserveEth;
-        return (newReserveEth, newReserveToken);
+        return newReserveToken;
     }
 
     receive() external payable {}
