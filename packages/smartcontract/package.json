@@ -11,6 +11,8 @@
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "@openzeppelin/upgrades-core": "^1.43.0",
     "@reown/appkit-adapter-wagmi": "^1.7.6",
+    "@uniswap/v4-core": "^1.0.2",
+    "@uniswap/v4-periphery": "^1.0.2",
     "dotenv": "^16.5.0"
   }
 }
