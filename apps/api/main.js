@@ -190,20 +190,23 @@ app.get('/api/tokens/search', async (req, res) => {
   const pageNum = parseInt(page);
   const limit = parseInt(pageSize);
 
-  if (typeof q !== 'string' || !q.trim()) {
-    return res.status(400).json({ error: 'Query string `q` is required' });
+  let filter = {};
+
+  if (q !== '__all__') {
+    if (typeof q !== 'string' || !q.trim()) {
+      return res.status(400).json({ error: 'Query string `q` is required' });
+    }
+
+    const searchRegex = new RegExp(q.trim(), 'i');
+
+    filter = {
+      $or: [
+        { name: { $regex: searchRegex } },
+        { symbol: { $regex: searchRegex } },
+        { twitter: { $regex: searchRegex } },
+      ]
+    };
   }
-
-  const searchRegex = new RegExp(q.trim(), 'i');
-
-  // Build filter
-  const filter = {
-    $or: [
-      { name: { $regex: searchRegex } },
-      { symbol: { $regex: searchRegex } },
-      { twitter: { $regex: searchRegex } }, // If you also want to support full URLs, tweak this
-    ]
-  };
 
   console.log('[DEBUG] MongoDB search filter:', filter);
 
@@ -215,7 +218,7 @@ app.get('/api/tokens/search', async (req, res) => {
         .limit(limit);
 
     const responseTokens = tokens.map(token => ({
-      id: token._id.toString(), // Ensure ID format matches your response sample
+      id: token._id.toString(),
       address: token.address,
       creatorAddress: token.creatorAddress,
       name: token.name,
