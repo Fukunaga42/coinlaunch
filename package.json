@@ -2,21 +2,29 @@
   "name": "coinlaunch",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "dev:api": "turbo dev --filter @coinlaunch/api",
+    "dev:twitter": "turbo dev --filter @coinlaunch/twitter",
+    "dev:all": "node scripts/start-dev.js",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "test": "turbo test",
+    "test:twitter": "cd apps/twitter && npm test"
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
-    "turbo": "^2.5.4",
-    "typescript": "5.8.2"
+    "@coinlaunch/eslint-config": "workspace:*",
+    "@coinlaunch/typescript-config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
   },
+  "packageManager": "pnpm@9.15.2",
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/*",
     "packages/*"

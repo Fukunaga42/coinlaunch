@@ -1,84 +1,120 @@
-# Turborepo starter
+# CoinLaunch
 
-This Turborepo starter is maintained by the Turborepo core team.
+Monorepo for the CoinLaunch project - A decentralized token launch platform.
 
-## Using this example
+## 🏗️ Architecture
 
-Run the following command:
+This monorepo contains multiple apps and packages:
 
-```sh
-npx create-turbo@latest
+### Apps
+
+- **`apps/api`** - Main API service (Port 5050)
+  - Handles core functionality
+  - IPFS uploads
+  - Token management
+  
+- **`apps/twitter`** - Twitter integration service (Port 5051)
+  - Listens for Twitter mentions
+  - Creates tokens via escrow wallets
+  - Posts automated replies
+  - Manages fee claims
+
+- **`apps/nextjs`** - Frontend application
+
+### Packages
+
+- **`packages/ui`** - Shared UI components
+- **`packages/smartcontract`** - Smart contracts
+- **`packages/subgraph`** - The Graph protocol integration
+- **`packages/typescript-config`** - Shared TypeScript configuration
+- **`packages/eslint-config`** - Shared ESLint configuration
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm 9.15.2+
+- MongoDB
+- Ethereum wallet with ETH (for Twitter service)
+
+### Installation
+
+```bash
+# Install all dependencies
+pnpm install
 ```
 
-## What's inside?
+### Configuration
 
-This Turborepo includes the following packages/apps:
+Each app has its own `.env` file. Copy the examples:
 
-### Apps and Packages
+```bash
+# API Service
+cp apps/api/env.example apps/api/.env
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
+# Twitter Service
+cp apps/twitter/env.example apps/twitter/.env
 ```
 
-### Develop
+### Development
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
+```bash
+# Start all services
 pnpm dev
+
+# Start specific services
+pnpm dev:api      # API service only
+pnpm dev:twitter  # Twitter service only
+
+# Start all backend services
+pnpm dev:all      # Uses custom script
 ```
 
-### Remote Caching
+## 📖 Documentation
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+- [Twitter Integration Guide](./docs/TWITTER_INTEGRATION.md) - Complete guide for Twitter service
+- [API Documentation](./apps/api/README.md)
+- [Smart Contracts](./packages/smartcontract/README.md)
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## 🧪 Testing
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+```bash
+# Run all tests
+pnpm test
 
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
+# Test Twitter integration
+pnpm test:twitter
 ```
 
-## Useful Links
+## 📝 Key Features
 
-Learn more about the power of Turborepo:
+1. **Token Creation via Twitter**: Users can create tokens by tweeting `@coinlaunchnow launch <name> <symbol>`
+2. **Escrow Wallets**: Each Twitter user gets a unique wallet for minting
+3. **Automated Replies**: Bot replies with contract address after minting
+4. **Fee Management**: Creators can claim accumulated trading fees
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+## 🛠️ Development Tips
+
+1. Use the mock mode in Twitter service for testing without API calls
+2. Both services share the same MongoDB instance
+3. Services communicate through the shared database
+4. Check service health: `http://localhost:5050` and `http://localhost:5051`
+
+## 📦 Build
+
+```bash
+# Build all packages
+pnpm build
+
+# Build specific app
+pnpm build --filter @coinlaunch/api
+```
+
+## 🚀 Deployment
+
+See individual app README files for deployment instructions.
+
+## 📄 License
+
+MIT
