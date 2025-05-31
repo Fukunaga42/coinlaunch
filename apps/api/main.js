@@ -123,20 +123,23 @@ app.get('/api/tokens/trending', async (req, res) => {
 
 app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
   console.log('📥 GET /api/ports/getTokensByCreator hit');
+  console.log('[DEBUG] Query:', req.query);
+  console.log('[DEBUG] Full URL:', req.url);
 
-  const { creatorAddress } = req.query;
+  // Manually extract the creator address from the URL path
+  const creatorAddress = req.url?.split('/api/tokens/creator/')[1]?.split('?')[0];
+
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
 
-  if (!creatorAddress) {
-    return res.status(400).json({ error: 'creatorAddress is required' });
+  if (!creatorAddress || typeof creatorAddress !== 'string') {
+    return res.status(400).json({ error: 'creatorAddress is required in URL path' });
   }
 
   try {
     // Filter tokens by creator and only include those with a twitterAuthorId
     const filter = {
       creator: creatorAddress.toLowerCase(),
-      twitterAuthorId: { $exists: true, $ne: null }
     };
 
     const total = await Token.countDocuments(filter);
