@@ -122,32 +122,42 @@ app.get('/api/tokens/trending', async (req, res) => {
 });
 
 app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
-  console.log('📥 GET /api/ports/getTokensByCreator hit');
+  console.log('📥 GET /api/tokens/creator/:creatorAddress hit');
   console.log('[DEBUG] Query:', req.query);
   console.log('[DEBUG] Full URL:', req.url);
 
-  // Manually extract the creator address from the URL path
-  const creatorAddress = req.url?.split('/api/tokens/creator/')[1]?.split('?')[0];
+  // Extract creator address from params (preferred over splitting req.url)
+  const creatorAddress = req.params.creatorAddress;
+  console.log('[DEBUG] Extracted creatorAddress:', creatorAddress);
 
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
+  console.log('[DEBUG] Pagination - page:', page, 'pageSize:', pageSize);
 
   if (!creatorAddress || typeof creatorAddress !== 'string') {
+    console.warn('[WARN] Invalid or missing creatorAddress');
     return res.status(400).json({ error: 'creatorAddress is required in URL path' });
   }
 
   try {
-    // Filter tokens by creator and only include those with a twitterAuthorId
+    // Build filter
     const filter = {
-      creator: creatorAddress.toLowerCase(),
+      twitterAuthorId: creatorAddress,
     };
+    console.log('[DEBUG] MongoDB filter:', filter);
 
+    // Count matching documents
     const total = await Token.countDocuments(filter);
+    console.log('[DEBUG] Total matching tokens:', total);
+
+    // Fetch paginated tokens
     const tokens = await Token.find(filter)
         .sort({ createdAt: -1 })
         .skip((page - 1) * pageSize)
         .limit(pageSize);
+    console.log('[DEBUG] Tokens fetched:', tokens.length);
 
+    // Transform tokens
     const responseTokens = tokens.map(token => ({
       address: token.address,
       name: token.name,
@@ -157,6 +167,8 @@ app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
       creator: token.creator,
       isComplete: !!token.twitterAuthorId
     }));
+
+    console.log('[DEBUG] Sending response with', responseTokens.length, 'tokens');
 
     res.json({
       tokens: responseTokens,

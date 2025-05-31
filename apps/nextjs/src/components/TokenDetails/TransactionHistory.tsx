@@ -53,7 +53,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         <tr className="bg-[var(--card2)]">
           <th className="px-4 py-2 text-sm text-gray-400">Maker</th>
           <th className="px-4 py-2 text-sm text-gray-400">Type</th>
-          <th className="px-4 py-2 text-sm text-gray-400">BONE</th>
+          <th className="px-4 py-2 text-sm text-gray-400">ETH</th>
           <th className="px-4 py-2 text-sm text-gray-400">{tokenSymbol}</th>
           <th className="px-4 py-2 text-sm text-gray-400">Date</th>
           <th className="px-4 py-2 text-sm text-gray-400">Tx</th>
@@ -113,7 +113,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   />
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">{formatAmountV3(tx.ethAmount)} BONE</span>
+                  <span className="text-gray-400">{formatAmountV3(tx.ethAmount)} ETH</span>
                   <span className="text-gray-400">{formatAmountV3(tx.tokenAmount)} {tokenSymbol}</span>
                 </div>
               </div>

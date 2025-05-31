@@ -171,6 +171,13 @@ const ProfilePage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [twitterId, setTwitterId] = useState<string | null>(null);
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const [redeemTargetToken, setRedeemTargetToken] = useState<Token | null>(null);
+  const [erc20AddressInput, setErc20AddressInput] = useState("");
+  const [erc20AddressError, setErc20AddressError] = useState("");
+  const [redeemMessage, setRedeemMessage] = useState<null | { type: "success" | "error", text: string }>(null);
+
+
 
   const [tokenAddresses, setTokenAddresses] = useState<
     Array<{ address: string; symbol: string }>
@@ -423,53 +430,39 @@ const ProfilePage: React.FC = () => {
                         <LoadingBar size="medium" />
                       </div>
                   ) : createdTokens.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         {createdTokens.map((token) => (
                             <div
                                 key={token.address}
-                                className="bg-[var(--card)] rounded-lg p-3 sm:p-4 cursor-pointer hover:bg-[var(--card-hover)] transition-colors duration-200 flex items-start relative"
+                                className="bg-[var(--card)] rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-[var(--card-hover)] transition-colors duration-200"
                                 onClick={() => handleTokenClick(token.address)}
                             >
-                              {connectedAddress &&
-                                  connectedAddress.toLowerCase() ===
-                                  addressToUse.toLowerCase() &&
-                                  isTokenIncomplete(token) && (
-                                      <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedToken(token);
-                                            setIsUpdateModalOpen(true);
-                                          }}
-                                          className="absolute top-2 right-2 p-2 rounded-full bg-[var(--card-boarder)] hover:bg-[#444444] transition-colors duration-200"
-                                      >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 text-gray-400"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                        >
-                                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                        </svg>
-                                      </button>
-                                  )}
-                              {token.logo && (
-                                  <img
-                                      src={token.logo || "/chats/noimg.svg"}
-                                      alt={`${token.name} logo`}
-                                      className="w-16 h-16 mr-3 sm:mr-4 rounded-lg"
-                                  />
-                              )}
-                              <div>
-                                <h3 className="text-xs sm:text-sm font-semibold text-white mb-1">
-                                  {token.name}{" "}
-                                  <span className="text-gray-400">
-                            ({token.symbol})
-                          </span>
-                                </h3>
-                                <p className="text-gray-400 text-[9px] sm:text-xs">
-                                  {token.description}
-                                </p>
+                              <div className="flex items-start sm:items-center w-full sm:w-auto gap-4 cursor-pointer">
+                                {token.logo && (
+                                    <img
+                                        src={token.logo || "/chats/noimg.svg"}
+                                        alt={`${token.name} logo`}
+                                        className="w-16 h-16 rounded-lg"
+                                    />
+                                )}
+                                <div>
+                                  <h3 className="text-sm font-semibold text-white mb-1">
+                                    {token.name}{" "}
+                                    <span className="text-gray-400">({token.symbol})</span>
+                                  </h3>
+                                  <p className="text-gray-400 text-xs">{token.description}</p>
+                                </div>
                               </div>
+                              <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRedeemTargetToken(token);
+                                    setIsRedeemModalOpen(true);
+                                  }}
+                                  className="mt-4 sm:mt-0 sm:ml-4 px-3 py-1.5 rounded-md bg-[var(--primary)] text-black text-xs font-semibold hover:opacity-90 transition-all"
+                              >
+                                Redeem Volume Fees
+                              </button>
                             </div>
                         ))}
                       </div>
@@ -487,6 +480,7 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
             )}
+
 
           </div>
 
@@ -507,6 +501,85 @@ const ProfilePage: React.FC = () => {
                 onUpdate={handleTokenUpdate}
             />
         )}
+
+        {isRedeemModalOpen && redeemTargetToken && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+              <div className="bg-[var(--card2)] rounded-lg p-6 w-full max-w-2xl">
+                <h2 className="text-white text-lg font-semibold mb-4">
+                  Redeem Fees for {redeemTargetToken.name}
+                </h2>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Enter ERC20 Address
+                </label>
+                <input
+                    type="text"
+                    value={erc20AddressInput}
+                    onChange={(e) => {
+                      setErc20AddressInput(e.target.value);
+                      setErc20AddressError("");
+                    }}
+                    placeholder="0x..."
+                    className="w-full px-3 py-2 rounded-md bg-[var(--card)] text-white border border-gray-700 focus:outline-none"
+                />
+                {erc20AddressError && (
+                    <p className="text-red-400 text-xs mt-1">{erc20AddressError}</p>
+                )}
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                      onClick={() => {
+                        setIsRedeemModalOpen(false);
+                        setRedeemTargetToken(null);
+                        setErc20AddressInput("");
+                        setErc20AddressError("");
+                      }}
+                      className="px-4 py-2 text-sm text-gray-300 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                      onClick={async () => {
+                        const trimmed = erc20AddressInput.trim();
+                        const isValid = /^0x[a-fA-F0-9]{40}$/.test(trimmed);
+
+                        if (!isValid) {
+                          setErc20AddressError("Invalid ERC20 address format");
+                          return;
+                        }
+
+                        try {
+                          debugger
+                          const response = await axios.post("http://testapi.example.com/redeem", {
+                            tokenAddress: redeemTargetToken.address,
+                            destinationERC20: trimmed,
+                          });
+
+                          if (response.status === 200) {
+                            setRedeemMessage({ type: "success", text: "✅ Fees successfully claimed!" });
+                            setTimeout(() => setRedeemMessage(null), 3000);
+                          } else {
+                            throw new Error("Unexpected response status");
+                          }
+
+                          setIsRedeemModalOpen(false);
+                          setRedeemTargetToken(null);
+                          setErc20AddressInput("");
+                          setErc20AddressError("");
+                        } catch (error) {
+                          console.error("Redeem API failed:", error);
+                          setRedeemMessage({ type: "error", text: "❌ Failed to redeem fees. Please try again." });
+                          setTimeout(() => setRedeemMessage(null), 4000);
+                        }
+                      }}
+
+                      className="px-4 py-2 bg-[var(--primary)] text-black rounded-md text-sm font-medium hover:opacity-90"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
+
       </Layout>
   );
 };
