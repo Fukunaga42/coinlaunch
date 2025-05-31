@@ -140,9 +140,10 @@ app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
   }
 
   try {
-    // Build filter
+    // Build filter with additional status condition
     const filter = {
       twitterAuthorId: creatorAddress,
+      status: "COMMENTED"  // <-- Add this line
     };
     console.log('[DEBUG] MongoDB filter:', filter);
 
@@ -179,6 +180,7 @@ app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
     console.error('❌ Error fetching tokens by creator:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
+
 });
 
 app.get('/api/tokens/search', async (req, res) => {
