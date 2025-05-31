@@ -16,16 +16,16 @@ const TOKENS_PER_PAGE = 100;
 
 const TYPEWRITER_TEXTS = [
   {
-    heading: "Buy safe tokens early,",
-    subheading: "before they hit Uniswap!"
+    heading: "Launch coins on X,",
+    subheading: "tweet to go viral!"
   },
   {
-    heading: "Discover the next ETH gem,",
-    subheading: "launching on CoinLaunch."
+    heading: "X-born tokens shine,",
+    subheading: "trade on CoinLaunch."
   },
   {
-    heading: "Secure your spot early,",
-    subheading: "and trade with confidence."
+    heading: "Tweet your coin live,",
+    subheading: "join the X hype!"
   }
 ];
 
