@@ -6,9 +6,9 @@ dataSources:
     name: BondingCurveManager
     network: sepolia
     source:
-      address: "0x93302cd93635d5188770aA77B2e717e7452dcf71" # Replace with actual deployed contract address
+      address: "0x46A679a042BE77ebf2261e30E93B7144C5798122" # Replace with actual deployed contract address
       abi: BondingCurveManager
-      startBlock: 8448499
+      startBlock: 8448737
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

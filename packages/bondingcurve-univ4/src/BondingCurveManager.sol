@@ -265,7 +265,11 @@ contract BondingCurveManager is Ownable, ReentrancyGuard, IUnlockCallback {
                 _migrateToUniswapV4(address(token));
             }
         }
-        info.liquidityMigrated = false;
+        
+        // Only set liquidityMigrated to false if migration hasn't happened
+        if (!info.liquidityMigrated) {
+            info.liquidityMigrated = false;
+        }
 
         // Add token to the list
         tokenListArray.push(address(token));
@@ -367,9 +371,6 @@ contract BondingCurveManager is Ownable, ReentrancyGuard, IUnlockCallback {
     function _migrateToUniswapV4(address tokenAddress) internal {
         TokenInfo storage info = tokenInfos[tokenAddress];
 
-        // Mark as migrated first to prevent reentrancy
-        info.liquidityMigrated = true;
-
         // Calculate tokens to add to liquidity (remaining tokens from bonding curve)
         uint256 tokensForLP = info.rReserveToken >= 0
             ? uint256(info.rReserveToken)
@@ -381,25 +382,52 @@ contract BondingCurveManager is Ownable, ReentrancyGuard, IUnlockCallback {
             PumpToken(tokenAddress).mintFromFactory(address(this), tokensForLP);
         }
 
+        bool migrationSuccessful = false;
+
         if (ethForLP > 0 && tokensForLP > 0) {
-            // Wrap ETH to WETH for V4 compatibility
-            IWETH(WETH).deposit{value: ethForLP}();
-
-            // Prepare migration data
-            MigrationData memory migrationData = MigrationData({
-                tokenAddress: tokenAddress,
-                ethAmount: ethForLP,
-                tokenAmount: tokensForLP
-            });
-
-            // Use unlock pattern to execute migration
-            poolManager.unlock(abi.encode(migrationData));
-
-            emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
+            try this._executeMigrationSafely(tokenAddress, ethForLP, tokensForLP) {
+                migrationSuccessful = true;
+                emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
+            } catch Error(string memory reason) {
+                // Migration failed - keep liquidityMigrated = false so trading can continue
+                migrationSuccessful = false;
+                emit LiquidityAdded(tokenAddress, 0, 0); // Emit with 0 amounts to indicate failure
+            } catch (bytes memory) {
+                // Migration failed with low-level error
+                migrationSuccessful = false;
+                emit LiquidityAdded(tokenAddress, 0, 0); // Emit with 0 amounts to indicate failure
+            }
         } else {
-            // Even if no liquidity to add, emit event for graduation
+            // No liquidity to add, but still consider it "migrated" for graduation
+            migrationSuccessful = true;
             emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
         }
+
+        // Only mark as migrated if the migration actually succeeded
+        info.liquidityMigrated = migrationSuccessful;
+    }
+
+    // External function to safely execute migration (allows try/catch)
+    function _executeMigrationSafely(
+        address tokenAddress,
+        uint256 ethAmount,
+        uint256 tokenAmount
+    ) external {
+        // Only allow calls from this contract
+        require(msg.sender == address(this), "Only self");
+
+        // Wrap ETH to WETH for V4 compatibility
+        IWETH(WETH).deposit{value: ethAmount}();
+
+        // Prepare migration data
+        MigrationData memory migrationData = MigrationData({
+            tokenAddress: tokenAddress,
+            ethAmount: ethAmount,
+            tokenAmount: tokenAmount
+        });
+
+        // Use unlock pattern to execute migration
+        poolManager.unlock(abi.encode(migrationData));
     }
 
     function _executeMigration(MigrationData memory data) internal {

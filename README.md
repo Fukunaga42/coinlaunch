@@ -117,4 +117,5 @@ See individual app README files for deployment instructions.
 
 ## 📄 License
 
-MIT
+## run no twitter
+turbo dev --filter=@coinlaunch/api --filter=coinlaunch-ui
