@@ -54,13 +54,13 @@ Twitter Stream API → XService → Database → DBListener → TokenMinter → 
 
 Simply tweet in this format:
 ```
-@coinlaunchnow $TokenName $SYMBOL
+@coinlaunchnow launch $TokenName $SYMBOL
 ```
 
 For example:
-- `@coinlaunchnow $Bitcoin $BTC`
-- `@coinlaunchnow $Ethereum $ETH`
-- `@coinlaunchnow $DogeCoin $DOGE`
+- `@coinlaunchnow launch $Bitcoin $BTC`
+- `@coinlaunchnow launch $Ethereum $ETH`
+- `@coinlaunchnow launch $DogeCoin $DOGE`
 
 The service will automatically:
 1. Detect your tweet
@@ -125,7 +125,7 @@ DB_POLLING_INTERVAL=5000
 ## How It Works
 
 1. **Twitter Mention Detection**:
-   - Users tweet "@coinlaunchnow $TokenName $SYMBOL"
+   - Users tweet "@coinlaunchnow launch $TokenName $SYMBOL"
    - XService detects the mention via Twitter Stream API
    - Creates a token record in MongoDB with status AWAITING_MINT
 

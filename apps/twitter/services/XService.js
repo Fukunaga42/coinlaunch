@@ -150,13 +150,13 @@ class XService {
 
   // Extract token info from tweet text
   extractTokenData(tweetText) {
-    // Match pattern: @coinlaunchnow $<token_name> $<token_symbol>
-    // Example: @coinlaunchnow $BITCOIN $BTC
-    const pattern = /@coinlaunchnow\s+\$(\S+)\s+\$(\S+)/i;
+    // Match pattern: @coinlaunchnow launch $<token_name> $<token_symbol>
+    // Example: @coinlaunchnow launch $Bitcoin $BTC
+    const pattern = /@coinlaunchnow\s+launch\s+\$(\S+)\s+\$(\S+)/i;
     const match = tweetText.match(pattern);
     
     if (!match) {
-      return { success: false, error: 'Invalid format. Use: @coinlaunchnow $NAME $SYMBOL' };
+      return { success: false, error: 'Invalid format. Use: @coinlaunchnow launch $NAME $SYMBOL' };
     }
 
     const tokenName = match[1].trim();
@@ -195,7 +195,7 @@ class XService {
       // Add new rule
       await this.apiClient.post(this.rulesUrl, {
         add: [{
-          value: '@coinlaunchnow "$"',
+          value: '@coinlaunchnow "launch"',
           tag: 'launch-token-mentions'
         }]
       }, {
@@ -326,7 +326,7 @@ class XService {
         const mockTweet = {
           data: {
             id: `mock_${Date.now()}`,
-            text: '@coinlaunchnow $MockToken $MOCK',
+            text: '@coinlaunchnow launch $MockToken $MOCK',
             author_id: 'mock_user_123',
             created_at: new Date().toISOString()
           },
