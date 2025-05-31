@@ -38,3 +38,11 @@ yarn-error.log*
 *.pem
 
 .idea
+
+# Heroku configuration files
+heroku-configs/
+setup-heroku-env*.sh
+configure-heroku.sh
+heroku-env-setup.sh
+config-heroku-simple.sh
+migrate-env-to-heroku.sh
