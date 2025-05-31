@@ -17,7 +17,6 @@ const authenticateWithPrivy = async (req, res, next) => {
     console.log("🔍 Access token received:", accessToken.slice(0, 20) + "...");
 
     const tokenClaims = await privyClient.verifyAuthToken(accessToken);
-    console.log("✅ Token claims:", tokenClaims);
 
     const userProfile = await privyClient.getUserById(tokenClaims.userId);
     console.log("👤 Fetched user profile:", userProfile);

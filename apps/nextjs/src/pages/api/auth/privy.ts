@@ -7,7 +7,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const authHeader = req.headers.authorization;
-  console.log("🔑 Forwarding Authorization header to backend:", authHeader);
 
   try {
     const backendResponse = await axios.get(
@@ -19,7 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     );
 
-    console.log("✅ Backend response:", backendResponse.data);
     res.status(200).json(backendResponse.data);
   } catch (error) {
     console.error("❌ Backend call failed:");

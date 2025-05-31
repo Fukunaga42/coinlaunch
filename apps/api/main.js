@@ -121,7 +121,7 @@ app.get('/api/tokens/trending', async (req, res) => {
   }
 });
 
-app.get('/api/ports/getTokensByCreator', async (req, res) => {
+app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
   console.log('📥 GET /api/ports/getTokensByCreator hit');
 
   const { creatorAddress } = req.query;

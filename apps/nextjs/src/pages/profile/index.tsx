@@ -170,6 +170,8 @@ const ProfilePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [twitterId, setTwitterId] = useState<string | null>(null);
+
   const [tokenAddresses, setTokenAddresses] = useState<
     Array<{ address: string; symbol: string }>
   >([]);
@@ -184,13 +186,10 @@ const ProfilePage: React.FC = () => {
 
   const { initOAuth } = useLoginWithOAuth();
 
-  console.log("🚀 ~ user:", user);
-  console.log("🚀 ~ authenticated:", authenticated);
 
 
   const addressToUse = (profileAddress as string) || connectedAddress || "";
 
-  console.log("🚀 ~ addressToUse:", addressToUse);
   const fetchTransactions = useCallback(
     async (address: string, page: number) => {
       setIsLoading(true);
@@ -222,6 +221,8 @@ const ProfilePage: React.FC = () => {
 
   const fetchCreatedTokens = useCallback(
     async (creatorAddress: string, page: number) => {
+      debugger
+
       setIsLoading(true);
       try {
         const response = await getTokensByCreator(creatorAddress, page);
@@ -237,27 +238,36 @@ const ProfilePage: React.FC = () => {
     []
   );
 
-  const handleTokenUpdate = useCallback(async () => {
-    // Refresh the tokens list
-    if (addressToUse) {
-      await fetchCreatedTokens(addressToUse, createdTokensPage);
-    }
-  }, [addressToUse, createdTokensPage, fetchCreatedTokens]);
 
   useEffect(() => {
-    if (addressToUse) {
-      fetchTransactions(addressToUse, currentPage);
-      fetchTokenAddresses();
-      fetchCreatedTokens(addressToUse, createdTokensPage);
+    if (!ready || !addressToUse) return;
+
+    // Get Twitter ID from linked accounts
+    const twitter = user?.linkedAccounts?.find(
+        (acc) => acc.type === "twitter_oauth"
+    );
+
+    if (twitter?.subject) {
+      setTwitterId(twitter.subject);
     }
+
+    fetchTransactions(addressToUse, currentPage);
+    fetchTokenAddresses();
   }, [
+    ready,
+    user,
     addressToUse,
     currentPage,
-    createdTokensPage,
     fetchTransactions,
     fetchTokenAddresses,
-    fetchCreatedTokens,
   ]);
+
+  useEffect(() => {
+    if (!twitterId || !addressToUse) return;
+
+    fetchCreatedTokens(twitterId, createdTokensPage);
+  }, [twitterId, addressToUse, createdTokensPage, fetchCreatedTokens]);
+
 
 
   useEffect(() => {
@@ -480,76 +490,6 @@ const ProfilePage: React.FC = () => {
 
           </div>
 
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">
-              Recent Transactions
-            </h2>
-            {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <LoadingBar size="medium"/>
-                </div>
-            ) : transactions && transactions.length > 0 ? (
-                <div className="overflow-x-auto bg-[var(--card)] rounded-lg">
-                  <table className="min-w-full divide-y divide-[var(--card-boarder)]">
-                    <thead className="bg-[var(--card2)]">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Token
-                      </th>
-                      <th className="px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Bone
-                      </th>
-                      <th className="px-4 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Date
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--card-boarder)]">
-                    {transactions.map((tx) => (
-                        <tr
-                            key={tx.id}
-                            className="hover:bg-[var(--card-hover)] transition-colors duration-150"
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap text-[10px] sm:text-xs text-gray-300">
-                            {tx.type}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-[10px] sm:text-xs text-gray-300">
-                            {getTokenSymbol(tx.recipientAddress)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-[10px] sm:text-xs text-gray-300">
-                            {formatAmountV3(tx.tokenAmount)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-[10px] sm:text-xs text-gray-300">
-                            {formatAmountV3(tx.ethAmount)} BONE
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-[10px] sm:text-xs text-gray-300">
-                            {formatTimestamp(tx.timestamp)}
-                          </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                  </table>
-                </div>
-            ) : (
-                <p className="text-gray-400 bg-[var(--card)] rounded-lg p-4">
-                  No recent transactions.
-                </p>
-            )}
-
-            {totalPages > 1 && (
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                />
-            )}
-          </div>
         </div>
         {isTokenLoading && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
