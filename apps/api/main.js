@@ -251,6 +251,37 @@ app.get('/api/tokens/search', async (req, res) => {
   }
 });
 
+app.get('/api/tokens/address/:contractAddress', async (req, res) => {
+  console.log('📥 GET /api/tokens/address/:contractAddress hit');
+  const { contractAddress } = req.params;
+
+  if (!contractAddress || typeof contractAddress !== 'string') {
+    return res.status(400).json({ error: 'Valid contract address is required in the URL path' });
+  }
+
+  try {
+    const token = await Token.findOne({ address: contractAddress });
+
+    if (!token) {
+      return res.status(404).json({ error: 'Token not found for provided contract address' });
+    }
+
+    const response = {
+      address: token.address,
+      logo: token.logo || null,
+      symbol: token.symbol,
+      name: token.name
+    };
+
+    console.log('[DEBUG] Token details found:', response);
+    res.json(response);
+  } catch (err) {
+    console.error('❌ Error fetching token by contract address:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 app.get('')
 
 // Start server after DB is ready

@@ -530,7 +530,7 @@ interface TokenDetailProps {
           <div className="space-y-6">
             {/* Token Info Header (shown only on desktop) */}
             <div className="hidden lg:block bg-[var(--card)] rounded-lg p-4">
-              <TokenInfo 
+              <TokenInfo
                 tokenInfo={tokenInfo} 
                 showHeader={true} 
                 refreshTrigger={refreshCounter}

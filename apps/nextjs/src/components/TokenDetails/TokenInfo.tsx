@@ -8,6 +8,7 @@ import { formatUnits } from 'viem';
 import { toast } from 'react-toastify';
 import { getCurrentPrice } from '@/utils/api';
 import Image from 'next/image';
+import axios from 'axios'; // Add at the top if not already
 
 interface TokenInfoProps {
   tokenInfo: TokenWithTransactions;
@@ -23,11 +24,31 @@ let priceCache: PriceCache | null = null;
 
 const TokenInfo: React.FC<TokenInfoProps> = ({ tokenInfo, showHeader = false, refreshTrigger = 0, liquidityEvents }) => {
   const [flrPrice, setFlrPrice] = useState<string>('0');
+  const [logoUrl, setLogoUrl] = useState<string>(tokenInfo.logo || '/chats/noimg.svg');
   const tokenAddress = tokenInfo?.address as `0x${string}`;
   const shouldFetchLiquidity = !liquidityEvents?.liquidityEvents?.length;
   const { data: liquidityData, refetch: refetchLiquidity } = useTokenLiquidity(shouldFetchLiquidity ? tokenAddress : null);
   const { data: currentPrice, refetch: refetchPrice } = useCurrentTokenPrice(tokenAddress);
   const { data: marketCap, refetch: refetchMarketCap } = useMarketCap(tokenAddress);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      if (tokenInfo.logo) return;
+      try {
+        const res = await axios.get(`/api/tokens/${tokenInfo.address}`);
+        if (res.data?.logo) {
+          setLogoUrl(res.data.logo);
+        }
+      } catch (error) {
+        console.error('Failed to fetch token logo:', error);
+        setLogoUrl('/chats/noimg.svg'); // fallback
+      }
+    };
+
+    fetchLogo();
+  }, [tokenInfo.address, tokenInfo.logo]);
 
   useEffect(() => {
     const fetchFlrPrice = async () => {
@@ -153,7 +174,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ tokenInfo, showHeader = false, re
           {/* Full-width image container for mobile */}
           <div className="w-full h-[200px] mb-4 bg-[var(--card2)] rounded-b-xl overflow-hidden">
             <img 
-              src={tokenInfo.logo || '/chats/noimg.svg'} 
+              src={logoUrl || '/chats/noimg.svg'}
               alt={tokenInfo.name} 
               className="w-full h-full object-cover"
             />
@@ -234,7 +255,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ tokenInfo, showHeader = false, re
         <div className="hidden lg:block">
           <div className="flex items-start gap-4">
             <img 
-              src={tokenInfo.logo || '/chats/noimg.svg'} 
+              src={logoUrl || '/chats/noimg.svg'}
               alt={tokenInfo.name} 
               className="w-24 h-24 rounded-lg"
             />
