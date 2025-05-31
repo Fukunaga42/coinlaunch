@@ -498,7 +498,7 @@ const ProfilePage: React.FC = () => {
                   setIsUpdateModalOpen(false);
                   setSelectedToken(null);
                 }}
-                onUpdate={handleTokenUpdate}
+                onUpdate={() => {}}
             />
         )}
 

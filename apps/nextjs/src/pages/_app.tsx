@@ -34,7 +34,7 @@ export default function App({ Component, pageProps }: AppProps) {
             appId={PRIVY_APP_ID}
 
             config={{
-                autoConnect: false,
+                // autoConnect: false,
               appearance: {
                 theme: "dark",
                 accentColor: "#9333EA",

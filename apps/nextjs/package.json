@@ -12,6 +12,8 @@
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^2.10.4",
+    "@ethersproject/abi": "^5.8.0",
+    "@ethersproject/providers": "^5.8.0",
     "@headlessui/react": "^2.1.2",
     "@heroicons/react": "^2.1.4",
     "@privy-io/react-auth": "^2.13.5",

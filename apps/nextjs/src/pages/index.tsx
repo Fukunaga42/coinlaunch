@@ -183,7 +183,8 @@ const Home: React.FC = () => {
         currentPage: fetchedTokens.currentPage || 1,
         totalPages: fetchedTokens.totalPages || 1,
         tokens: [],
-        fullList: fetchedTokens.fullList
+        // fullList: fetchedTokens.fullList 
+        fullList: []
       };
 
       setTokens(adjustedTokens);
