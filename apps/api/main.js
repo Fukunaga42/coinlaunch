@@ -121,30 +121,43 @@ app.get('/api/tokens/trending', async (req, res) => {
   }
 });
 
-app.get('/api/ports/getTokensByCreator', async (req, res) => {
-  console.log('📥 GET /api/ports/getTokensByCreator hit');
+app.get('/api/tokens/creator/:creatorAddress', async (req, res) => {
+  console.log('📥 GET /api/tokens/creator/:creatorAddress hit');
+  console.log('[DEBUG] Query:', req.query);
+  console.log('[DEBUG] Full URL:', req.url);
 
-  const { creatorAddress } = req.query;
+  // Extract creator address from params (preferred over splitting req.url)
+  const creatorAddress = req.params.creatorAddress;
+  console.log('[DEBUG] Extracted creatorAddress:', creatorAddress);
+
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
+  console.log('[DEBUG] Pagination - page:', page, 'pageSize:', pageSize);
 
-  if (!creatorAddress) {
-    return res.status(400).json({ error: 'creatorAddress is required' });
+  if (!creatorAddress || typeof creatorAddress !== 'string') {
+    console.warn('[WARN] Invalid or missing creatorAddress');
+    return res.status(400).json({ error: 'creatorAddress is required in URL path' });
   }
 
   try {
-    // Filter tokens by creator and only include those with a twitterAuthorId
+    // Build filter
     const filter = {
-      creator: creatorAddress.toLowerCase(),
-      twitterAuthorId: { $exists: true, $ne: null }
+      twitterAuthorId: creatorAddress,
     };
+    console.log('[DEBUG] MongoDB filter:', filter);
 
+    // Count matching documents
     const total = await Token.countDocuments(filter);
+    console.log('[DEBUG] Total matching tokens:', total);
+
+    // Fetch paginated tokens
     const tokens = await Token.find(filter)
         .sort({ createdAt: -1 })
         .skip((page - 1) * pageSize)
         .limit(pageSize);
+    console.log('[DEBUG] Tokens fetched:', tokens.length);
 
+    // Transform tokens
     const responseTokens = tokens.map(token => ({
       address: token.address,
       name: token.name,
@@ -154,6 +167,8 @@ app.get('/api/ports/getTokensByCreator', async (req, res) => {
       creator: token.creator,
       isComplete: !!token.twitterAuthorId
     }));
+
+    console.log('[DEBUG] Sending response with', responseTokens.length, 'tokens');
 
     res.json({
       tokens: responseTokens,
@@ -166,6 +181,75 @@ app.get('/api/ports/getTokensByCreator', async (req, res) => {
   }
 });
 
+app.get('/api/tokens/search', async (req, res) => {
+  console.log('📥 GET /api/tokens/search hit');
+  console.log('[DEBUG] Query:', req.query);
+
+  const { q = '', page = 1, pageSize = 20 } = req.query;
+
+  const pageNum = parseInt(page);
+  const limit = parseInt(pageSize);
+
+  let filter = {};
+
+  if (q !== '__all__') {
+    if (typeof q !== 'string' || !q.trim()) {
+      return res.status(400).json({ error: 'Query string `q` is required' });
+    }
+
+    const searchRegex = new RegExp(q.trim(), 'i');
+
+    filter = {
+      $or: [
+        { name: { $regex: searchRegex } },
+        { symbol: { $regex: searchRegex } },
+        { twitter: { $regex: searchRegex } },
+      ]
+    };
+  }
+
+  console.log('[DEBUG] MongoDB search filter:', filter);
+
+  try {
+    const total = await Token.countDocuments(filter);
+    const tokens = await Token.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limit)
+        .limit(limit);
+
+    const responseTokens = tokens.map(token => ({
+      id: token._id.toString(),
+      address: token.address,
+      creatorAddress: token.creatorAddress,
+      name: token.name,
+      symbol: token.symbol,
+      logo: token.logo || null,
+      description: token.description,
+      chainId: token.chainId,
+      createdAt: token.createdAt,
+      updatedAt: token.updatedAt,
+      website: token.website || null,
+      telegram: token.telegram || null,
+      discord: token.discord || null,
+      twitter: token.twitter || null,
+      youtube: token.youtube || null,
+      latestTransactionTimestamp: token.latestTransactionTimestamp,
+      _count: token._count || { liquidityEvents: 0 },
+    }));
+
+    console.log(`[DEBUG] Sending ${responseTokens.length} tokens from page ${pageNum}`);
+
+    res.json({
+      tokens: responseTokens,
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limit),
+      totalResults: total
+    });
+  } catch (err) {
+    console.error('❌ Error during token search:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.get('')
 

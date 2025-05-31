@@ -33,7 +33,6 @@ const TokenList: React.FC<TokenListProps> = ({
 }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  console.log('TokenList rendered with tokens:', tokens);
   const [liquidityData, setLiquidityData] = useState<TokenLiquidityData>({});
 
   const handleTokenClick = async (tokenAddress: string) => {

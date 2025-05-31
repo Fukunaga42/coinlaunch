@@ -64,7 +64,7 @@ interface TokenDetailProps {
   const [totalTransactionPages, setTotalTransactionPages] = useState(1);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [transactionFetchError, setTransactionFetchError] = useState<string | null>(null);
-  const [fromToken, setFromToken] = useState({ symbol: 'BONE', amount: '' });
+  const [fromToken, setFromToken] = useState({ symbol: 'ETH', amount: '' });
   const [toToken, setToToken] = useState({ symbol: '', amount: '' });
   const [isSwapped, setIsSwapped] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -288,11 +288,11 @@ interface TokenDetailProps {
   const handleSwap = useCallback(() => {
     setIsSwapped((prev) => !prev);
     setFromToken((prev) => ({
-      symbol: prev.symbol === 'BONE' ? tokenInfo.symbol : 'BONE',
+      symbol: prev.symbol === 'ETH' ? tokenInfo.symbol : 'ETH',
       amount: '',
     }));
     setToToken((prev) => ({
-      symbol: prev.symbol === 'BONE' ? tokenInfo.symbol : 'BONE',
+      symbol: prev.symbol === 'ETH' ? tokenInfo.symbol : 'ETH',
       amount: '',
     }));
   }, [tokenInfo]);

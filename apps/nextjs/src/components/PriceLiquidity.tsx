@@ -22,13 +22,13 @@ const PriceLiquidity: React.FC<PriceLiquidityProps> = ({ address }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <h2 className="text-base sm:text-lg font-semibold mb-2 text-blue-300">Current Price</h2>
         <p className="text-lg sm:text-xl text-blue-400">
-          {currentPrice ? formatAmount(currentPrice.toString()) : 'Loading...'} BONE
+          {currentPrice ? formatAmount(currentPrice.toString()) : 'Loading...'} ETH
         </p>
       </div>
       <div className="bg-gray-800 p-4 rounded-lg">
         <h2 className="text-base sm:text-lg font-semibold mb-2 text-blue-300">Current Liquidity</h2>
         <p className="text-lg sm:text-xl text-blue-400 mb-2">
-          {liquidityData && liquidityData[2] ? `${formatAmountV2(liquidityData[2].toString())} BONE` : '0 BONE'}
+          {liquidityData && liquidityData[2] ? `${formatAmountV2(liquidityData[2].toString())} ETH` : '0 ETH'}
         </p>
         {liquidityData && liquidityData[2] && (
           <>

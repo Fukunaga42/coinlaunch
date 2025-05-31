@@ -121,7 +121,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({ tokenInfo, showHeader = false, re
         />
         <InfoItem 
           label="Current Price" 
-          value={currentPrice ? `${formatAmount(currentPrice.toString())} BONE` : 'Loading...'}
+          value={currentPrice ? `${formatAmount(currentPrice.toString())} ETH` : 'Loading...'}
         />
       </div>
 

@@ -201,8 +201,8 @@
               <p className="text-lg font-semibold text-white">{formatAmountV3(event.tokenAmount)} {tokenInfo.symbol}</p>
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-400">BONE</p>
-              <p className="text-lg font-semibold text-white">{formatAmountV3(event.ethAmount)} BONE</p>
+              <p className="text-sm text-gray-400">ETH</p>
+              <p className="text-lg font-semibold text-white">{formatAmountV3(event.ethAmount)} ETH</p>
             </div>
           </div>
           <div className="flex space-x-4">

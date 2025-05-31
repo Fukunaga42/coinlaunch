@@ -183,10 +183,10 @@ const Navbar: React.FC = () => {
               >
                 How it works
               </button>
-              <Link href="https://t.me/bondle_xyz" target="_blank" className="text-gray-300 hover:text-white hover:bg-[var(--card-hover)] block px-2 py-1.5 text-sm rounded-lg transition-colors">
+              <Link href="https://t.me/coinlaunchnoportal" target="_blank" className="text-gray-300 hover:text-white hover:bg-[var(--card-hover)] block px-2 py-1.5 text-sm rounded-lg transition-colors">
                 Telegram
               </Link>
-              <Link href="https://x.com/bondlexyz" target="_blank" className="text-gray-300 hover:text-white hover:bg-[var(--card-hover)] block px-2 py-1.5 text-sm rounded-lg transition-colors">
+              <Link href="https://x.com/coinlaunchnow" target="_blank" className="text-gray-300 hover:text-white hover:bg-[var(--card-hover)] block px-2 py-1.5 text-sm rounded-lg transition-colors">
                 Twitter
               </Link>
               <div className="pt-4 pb-3 border-t border-[var(--card-boarder)]">
