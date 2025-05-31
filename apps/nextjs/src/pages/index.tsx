@@ -92,89 +92,12 @@ const Home: React.FC = () => {
     let fetchedTokens;
 
     try {
-      if (searchQuery.trim()) {
+      if (searchQuery.trim() && searchQuery !== '__all__') {
         fetchedTokens = await searchTokens(searchQuery, currentPage, TOKENS_PER_PAGE);
       } else {
-        switch (sort) {
-          // case 'trending':
-          // case 'marketcap':
-          //   // Handle both trending and marketcap cases
-          //   if (allTrendingTokens.length === 0) {
-          //     const trendingTokens = await getAllTokensTrends();
-          //     setAllTrendingTokens(trendingTokens);
-
-          //     if (sort === 'marketcap') {
-          //       fetchedTokens = {
-          //         data: trendingTokens,
-          //         totalCount: trendingTokens.length,
-          //         currentPage: currentPage,
-          //         totalPages: Math.ceil(trendingTokens.length / TOKENS_PER_PAGE),
-          //         fullList: true
-          //       };
-          //     } else {
-          //       const startIndex = (currentPage - 1) * TOKENS_PER_PAGE;
-          //       const endIndex = startIndex + TOKENS_PER_PAGE;
-          //       const paginatedTokens = trendingTokens.slice(startIndex, endIndex);
-
-          //       fetchedTokens = {
-          //         data: paginatedTokens,
-          //         totalCount: trendingTokens.length,
-          //         currentPage: currentPage,
-          //         totalPages: Math.ceil(trendingTokens.length / TOKENS_PER_PAGE)
-          //       };
-          //     }
-          //   } else {
-          //     if (sort === 'marketcap') {
-          //       fetchedTokens = {
-          //         data: allTrendingTokens,
-          //         totalCount: allTrendingTokens.length,
-          //         currentPage: currentPage,
-          //         totalPages: Math.ceil(allTrendingTokens.length / TOKENS_PER_PAGE),
-          //         fullList: true
-          //       };
-          //     } else {
-          //       const startIndex = (currentPage - 1) * TOKENS_PER_PAGE;
-          //       const endIndex = startIndex + TOKENS_PER_PAGE;
-          //       const paginatedTokens = allTrendingTokens.slice(startIndex, endIndex);
-
-          //       fetchedTokens = {
-          //         data: paginatedTokens,
-          //         totalCount: allTrendingTokens.length,
-          //         currentPage: currentPage,
-          //         totalPages: Math.ceil(allTrendingTokens.length / TOKENS_PER_PAGE)
-          //       };
-          //     }
-          //   }
-          //   break;
-
-          case 'new':
-            try {
-              fetchedTokens = await getRecentTokens(currentPage, TOKENS_PER_PAGE, 1);
-              if (fetchedTokens === null) {
-                setNoRecentTokens(true);
-                fetchedTokens = { data: [], totalCount: 0, currentPage: 1, totalPages: 1 };
-              }
-            } catch (error) {
-              console.error('Error fetching recent tokens:', error);
-              setError('Failed to fetch tokens. Please try again later.');
-              fetchedTokens = { data: [], totalCount: 0, currentPage: 1, totalPages: 1 };
-            }
-            break;
-          case 'finalized':
-            try {
-              fetchedTokens = await getTokensWithLiquidity(currentPage, TOKENS_PER_PAGE);
-            } catch (liquidityError) {
-              if (liquidityError instanceof Error && 'response' in liquidityError && (liquidityError.response as any).status === 404) {
-                setNoLiquidityTokens(true);
-                fetchedTokens = { data: [], totalCount: 0, currentPage: 1, totalPages: 1 };
-              } else {
-                throw liquidityError;
-              }
-            }
-            break;
-          default:
-            fetchedTokens = { data: [], totalCount: 0, currentPage: 1, totalPages: 1 };
-        }
+        const allQuery = '__all__';
+        // fetch default (recent) tokens
+        fetchedTokens = await searchTokens(allQuery, currentPage, TOKENS_PER_PAGE);
       }
 
       const adjustedTokens: PaginatedResponse<Token | TokenWithLiquidityEvents> = {
