@@ -493,18 +493,18 @@ interface TokenDetailProps {
                   >
                     Trades
                   </Tab>
-                  <Tab
-                    className={({ selected }) =>
-                      `w-full rounded-md py-2.5 text-sm font-medium leading-5 transition-colors
-                      ${
-                        selected
-                          ? 'bg-[var(--card-boarder)] text-white'
-                          : 'text-gray-400 hover:bg-[var(--card-hover)] hover:text-white'
-                      }`
-                    }
-                  >
-                    Chat
-                  </Tab>
+                  {/*<Tab*/}
+                  {/*  className={({ selected }) =>*/}
+                  {/*    `w-full rounded-md py-2.5 text-sm font-medium leading-5 transition-colors*/}
+                  {/*    ${*/}
+                  {/*      selected*/}
+                  {/*        ? 'bg-[var(--card-boarder)] text-white'*/}
+                  {/*        : 'text-gray-400 hover:bg-[var(--card-hover)] hover:text-white'*/}
+                  {/*    }`*/}
+                  {/*  }*/}
+                  {/*>*/}
+                  {/*  Chat*/}
+                  {/*</Tab>*/}
                 </Tab.List>
                 <Tab.Panels>
                   <Tab.Panel>
