@@ -30,8 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error(error);
     }
 
-    console.error("privy error", error);
+    console.error("privy error",error);
 
-    res.status(200).json({ error: "Backend call failed" });
+    res.status(400).json({ error: "Backend call failed" });
   }
 }
