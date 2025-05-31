@@ -10,22 +10,11 @@ class XService {
   constructor() {
     // Initialize OAuth2 service
     this.xOAuth2Service = XOAuth2Service.getInstance();
+    this.userBearerToken = null;
+    this.isAuthenticated = false;
     
-    try {
-      const tokens = this.xOAuth2Service.loadUserBearerToken();
-      if (!tokens) {
-        // Don't warn here - main.js will show the OAuth status
-        this.userBearerToken = null;
-        this.isAuthenticated = false;
-      } else {
-        this.userBearerToken = tokens.access_token;
-        this.isAuthenticated = true;
-      }
-    } catch (error) {
-      console.error("Error loading Twitter tokens:", error.message || "Unknown error");
-      this.userBearerToken = null;
-      this.isAuthenticated = false;
-    }
+    // OAuth initialization will be done asynchronously
+    this.initializeOAuth();
     
     // If OAuth2 is not configured, enable mock mode automatically
     if (!this.xOAuth2Service.isConfigured) {
@@ -77,6 +66,25 @@ class XService {
     this.streamUrl = '2/tweets/search/stream';
     this.rulesUrl = '2/tweets/search/stream/rules';
     this.stream = null;
+  }
+
+  async initializeOAuth() {
+    try {
+      const tokens = await this.xOAuth2Service.loadUserBearerToken();
+      if (!tokens) {
+        // Don't warn here - main.js will show the OAuth status
+        this.userBearerToken = null;
+        this.isAuthenticated = false;
+      } else {
+        this.userBearerToken = tokens.access_token;
+        this.isAuthenticated = true;
+        console.log("✅ OAuth tokens loaded from persistent storage");
+      }
+    } catch (error) {
+      console.error("Error loading Twitter tokens:", error.message || "Unknown error");
+      this.userBearerToken = null;
+      this.isAuthenticated = false;
+    }
   }
 
   static getInstance() {

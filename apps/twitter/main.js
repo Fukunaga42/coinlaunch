@@ -165,7 +165,10 @@ async function startService() {
         if (xService.isUserAuthenticated()) {
           console.log("✅ Twitter OAuth2 authenticated - ready to post replies");
         } else if (!XService.ShouldMock) {
-          console.log("⚠️ Twitter OAuth2 not authenticated - visit http://localhost:" + PORT + "/auth/twitter/login");
+          const authUrl = process.env.NODE_ENV === 'production' 
+            ? `https://${process.env.HEROKU_APP_NAME || 'coinlaunch-twitter-3597f6eda9d4'}.herokuapp.com/auth/twitter/login`
+            : `http://localhost:${PORT}/auth/twitter/login`;
+          console.log(`⚠️ Twitter OAuth2 not authenticated - visit ${authUrl}`);
         }
       } catch (error) {
         console.error("❌ Error checking Twitter auth:", error);

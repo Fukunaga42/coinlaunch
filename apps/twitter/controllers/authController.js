@@ -1,4 +1,5 @@
 const xOAuth2Service = require('../services/XOAuth2Service').getInstance();
+const XService = require('../services/XService');
 
 class AuthController {
   // Generate OAuth2 login URL
@@ -58,87 +59,55 @@ class AuthController {
       // Extract code verifier from state
       const codeVerifier = Buffer.from(state, 'base64').toString().replace('session:', '');
       
-      // Exchange code for tokens
-      const tokens = await xOAuth2Service.exchangeCodeForToken(code, codeVerifier);
+      // Exchange code for token
+      const tokenData = await xOAuth2Service.exchangeCodeForToken(code, codeVerifier);
       
       // Save tokens
-      xOAuth2Service.saveTokens(tokens);
+      await xOAuth2Service.saveTokens(tokenData);
       
-      // Redirect to success page or return success response
+      // Refresh XService instance to use new tokens
+      const xService = XService.getInstance();
+      await xService.initializeOAuth();
+      
       res.send(`
         <html>
-          <head>
-            <title>Twitter OAuth Success</title>
-            <style>
-              body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
-              .container { text-align: center; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              h1 { color: #1DA1F2; }
-              p { color: #333; margin: 20px 0; }
-              .close-btn { background: #1DA1F2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
+          <body style="font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+            <div style="text-align: center;">
               <h1>✅ Authentication Successful!</h1>
               <p>Twitter OAuth2 has been configured successfully.</p>
-              <p>You can now close this window and return to the application.</p>
-              <button class="close-btn" onclick="window.close()">Close Window</button>
+              <p>You can now close this window and the service will start posting replies to tweets.</p>
+              <script>
+                setTimeout(() => {
+                  window.close();
+                }, 5000);
+              </script>
             </div>
           </body>
         </html>
       `);
+      
     } catch (error) {
-      console.error('OAuth callback error:', error);
-      res.status(500).send(`
-        <html>
-          <head>
-            <title>Authentication Error</title>
-            <style>
-              body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
-              .container { text-align: center; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              h1 { color: #E1444D; }
-              p { color: #333; margin: 20px 0; }
-              pre { background: #f5f5f5; padding: 10px; border-radius: 5px; text-align: left; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>❌ Authentication Failed</h1>
-              <p>There was an error during the authentication process:</p>
-              <pre>${error.message}</pre>
-            </div>
-          </body>
-        </html>
-      `);
+      console.error("Error exchanging code for token:", error);
+      res.status(500).send("Authentication failed. Please try again.");
     }
   }
 
   // Check authentication status
-  static checkAuthStatus(req, res) {
+  static async checkAuthStatus(req, res) {
     try {
-      if (!xOAuth2Service.isConfigured) {
-        return res.json({
-          authenticated: false,
-          configured: false,
-          message: "OAuth2 not configured - Please set environment variables"
-        });
-      }
-      
-      const tokens = xOAuth2Service.loadUserBearerToken();
-      const isAuthenticated = !!tokens?.access_token;
+      const isConfigured = xOAuth2Service.isConfigured;
+      const tokens = await xOAuth2Service.loadUserBearerToken();
+      const hasTokens = !!tokens;
       
       res.json({
-        authenticated: isAuthenticated,
-        configured: true,
-        hasTokens: !!tokens,
-        tokenCreatedAt: tokens?.created_at || null
+        authenticated: hasTokens,
+        configured: isConfigured,
+        hasTokens: hasTokens,
+        tokenCreatedAt: tokens ? tokens.created_at : null
       });
     } catch (error) {
       console.error('Error checking auth status:', error);
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
+      res.status(500).json({ error: 'Failed to check authentication status' });
     }
   }
 }

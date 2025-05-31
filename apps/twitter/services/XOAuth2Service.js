@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+const OAuthToken = require("../models/OAuthToken");
 
 class XOAuth2Service {
   static instance;
@@ -35,18 +36,36 @@ class XOAuth2Service {
     return XOAuth2Service.instance;
   }
 
-  loadUserBearerToken() {
-    
+  async loadUserBearerToken() {
     if (!this.isConfigured) {
       return null;
     }
     
-    if (!fs.existsSync(XOAuth2Service.tokensFilePath)) {
-      // Silent return - main.js will handle OAuth status display
-      return null;
-    }
-    
     try {
+      // In production, always use MongoDB
+      if (process.env.NODE_ENV === 'production') {
+        const tokenDoc = await OAuthToken.findOne({ service: 'twitter' });
+        if (!tokenDoc) {
+          console.log("📊 No OAuth token found in database");
+          return null;
+        }
+        console.log("📊 OAuth token loaded from database");
+        return {
+          access_token: tokenDoc.access_token,
+          refresh_token: tokenDoc.refresh_token,
+          expires_in: tokenDoc.expires_in,
+          scope: tokenDoc.scope,
+          token_type: tokenDoc.token_type,
+          created_at: tokenDoc.created_at.toISOString()
+        };
+      }
+      
+      // In development, use file system
+      if (!fs.existsSync(XOAuth2Service.tokensFilePath)) {
+        // Silent return - main.js will handle OAuth status display
+        return null;
+      }
+      
       return JSON.parse(fs.readFileSync(XOAuth2Service.tokensFilePath, "utf8"));
     } catch (error) {
       console.error("Error loading tokens:", error);
@@ -60,8 +79,8 @@ class XOAuth2Service {
     }
     
     try {
-      const tokenData = this.loadUserBearerToken();
-      if (!tokenData) throw new Error("No tokens file found");
+      const tokenData = await this.loadUserBearerToken();
+      if (!tokenData) throw new Error("No tokens found");
 
       const refreshToken = tokenData.refresh_token;
       if (!refreshToken) throw new Error("No refresh token available");
@@ -95,7 +114,7 @@ class XOAuth2Service {
         token_type: response.data.token_type,
       };
 
-      this.saveTokens(newTokenData);
+      await this.saveTokens(newTokenData);
       return newTokenData;
       
     } catch (error) {
@@ -181,15 +200,40 @@ class XOAuth2Service {
     }
   }
 
-  saveTokens(tokenData) {
+  async saveTokens(tokenData) {
     if (!this.isConfigured) {
       return;
     }
     
-    fs.writeFileSync(
-      XOAuth2Service.tokensFilePath,
-      JSON.stringify(tokenData, null, 2)
-    );
+    try {
+      // In production, save to MongoDB
+      if (process.env.NODE_ENV === 'production') {
+        await OAuthToken.findOneAndUpdate(
+          { service: 'twitter' },
+          {
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            expires_in: tokenData.expires_in,
+            scope: tokenData.scope,
+            token_type: tokenData.token_type,
+            created_at: new Date(tokenData.created_at || Date.now()),
+            updated_at: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        console.log("💾 OAuth tokens saved to database");
+      } else {
+        // In development, also save to file
+        fs.writeFileSync(
+          XOAuth2Service.tokensFilePath,
+          JSON.stringify(tokenData, null, 2)
+        );
+        console.log("💾 OAuth tokens saved to file");
+      }
+    } catch (error) {
+      console.error("Error saving tokens:", error);
+      throw error;
+    }
   }
 }
 
