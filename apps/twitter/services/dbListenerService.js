@@ -149,7 +149,7 @@ class DBListenerService {
                 tokenId: token._id.toString(),
                 name: token.name,
                 symbol: token.symbol,
-                imageUrl: token.tokenImageUrl,
+                imageUrl: token.logo,
                 xPostId: token.xPostId
             });
 

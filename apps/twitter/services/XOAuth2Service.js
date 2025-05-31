@@ -42,8 +42,7 @@ class XOAuth2Service {
     }
     
     if (!fs.existsSync(XOAuth2Service.tokensFilePath)) {
-      console.log(XOAuth2Service.tokensFilePath);
-      console.log("XOAuth2Service loadUserBearerToken", "No tokens file found");
+      // Silent return - main.js will handle OAuth status display
       return null;
     }
     

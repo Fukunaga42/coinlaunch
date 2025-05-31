@@ -50,6 +50,26 @@ Twitter Stream API → XService → Database → DBListener → TokenMinter → 
    - Complete the OAuth2 flow
    - The service will save tokens for posting replies
 
+## How to Create a Token
+
+Simply tweet in this format:
+```
+@coinlaunchnow $TokenName $SYMBOL
+```
+
+For example:
+- `@coinlaunchnow $Bitcoin $BTC`
+- `@coinlaunchnow $Ethereum $ETH`
+- `@coinlaunchnow $DogeCoin $DOGE`
+
+The service will automatically:
+1. Detect your tweet
+2. Create an escrow wallet for you
+3. Mint the token on Ethereum/Base
+4. Reply to your tweet with the contract address
+
+**Pro tip**: Include an image in your tweet to use it as the token logo! Otherwise, your Twitter profile picture will be used.
+
 ## API Endpoints
 
 ### Health & Status
@@ -79,7 +99,7 @@ MONGO_URI=mongodb://localhost:27017
 MONGO_DB_NAME=coinlaunch
 
 # Ethereum
-ETHEREUM_RPC_URL=https://base.publicnode.com
+ETH_RPC_URL=https://base.publicnode.com
 FUNDING_PRIVATE_KEY=<wallet_private_key_for_gas_funding>
 
 # Contract
@@ -93,15 +113,19 @@ X_CLIENT_ID=<your_twitter_client_id>
 X_CLIENT_SECRET=<your_twitter_client_secret>
 X_OAUTH_2_REDIRECT_URL=http://localhost:5051/auth/twitter/callback
 
+# Twitter Bearer Token (for listening to mentions)
+X_APP_BEARER_TOKEN=<your_twitter_bearer_token>
+
 # Feature Flags
 ENABLE_TWITTER_LISTENER=true
 ENABLE_DB_LISTENER=true
+DB_POLLING_INTERVAL=5000
 ```
 
 ## How It Works
 
 1. **Twitter Mention Detection**:
-   - Users tweet "@coinlaunchnow launch TokenName SYMBOL"
+   - Users tweet "@coinlaunchnow $TokenName $SYMBOL"
    - XService detects the mention via Twitter Stream API
    - Creates a token record in MongoDB with status AWAITING_MINT
 
@@ -156,4 +180,4 @@ This will run `test-system.js` which verifies:
 ### MongoDB Connection
 - Verify MongoDB is running
 - Check connection string in `.env`
-- Ensure database user has write permissions 
+- Ensure database user has write permissions

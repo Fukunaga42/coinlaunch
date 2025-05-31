@@ -20,7 +20,6 @@ const tokenSchema = new mongoose.Schema({
     xPostId: { type: String, unique: true, sparse: true },
     twitterUsername: String,
     twitterAuthorId: String,
-    tokenImageUrl: String,
     escrowWallet: String,
     processingError: String,
     mintTransactionHash: String,

@@ -15,14 +15,9 @@ class TwitterCommenterService {
             this.xService = XService.getInstance();
             this.isEnabled = true;
             
-            // Log the commenting service status
+            // Don't log OAuth status here - main.js will handle it
             if (XService.ShouldMock) {
                 console.log('💬 Twitter Commenter Service initialized in MOCK mode');
-            } else if (!this.xService.isUserAuthenticated()) {
-                console.warn('⚠️ Twitter Commenter Service: OAuth2 not authenticated');
-                console.log('📌 Please visit /api/twitter/login to authenticate');
-            } else {
-                console.log('✅ Twitter Commenter Service ready to post real comments');
             }
         } catch (error) {
             console.error('❌ Failed to initialize Twitter Commenter Service:', error);

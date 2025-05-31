@@ -163,10 +163,9 @@ async function startService() {
       try {
         xService = XService.getInstance();
         if (xService.isUserAuthenticated()) {
-          console.log("✅ Twitter OAuth2 authenticated");
-        } else {
-          console.log("⚠️ Twitter OAuth2 not authenticated");
-          console.log(`📌 Visit http://localhost:${PORT}/auth/twitter/login to authenticate`);
+          console.log("✅ Twitter OAuth2 authenticated - ready to post replies");
+        } else if (!XService.ShouldMock) {
+          console.log("⚠️ Twitter OAuth2 not authenticated - visit http://localhost:" + PORT + "/auth/twitter/login");
         }
       } catch (error) {
         console.error("❌ Error checking Twitter auth:", error);
@@ -185,7 +184,6 @@ async function startService() {
       if (process.env.ENABLE_TWITTER_LISTENER === 'true') {
         console.log("🐦 Starting Twitter stream listener...");
         xService.startStream()
-          .then(() => console.log("✅ Twitter stream started"))
           .catch(error => console.error("❌ Failed to start Twitter stream:", error));
       } else {
         console.log("⚠️ Twitter stream disabled (set ENABLE_TWITTER_LISTENER=true to enable)");
