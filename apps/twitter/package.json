@@ -1,0 +1,22 @@
+{
+  "name": "@coinlaunch/twitter",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node main.js",
+    "start": "node main.js",
+    "test": "node test-system.js"
+  },
+  "keywords": ["twitter", "blockchain", "ethereum"],
+  "author": "",
+  "license": "ISC",
+  "description": "Twitter integration service for CoinLaunch - handles token creation via Twitter mentions",
+  "dependencies": {
+    "@privy-io/server-auth": "^1.24.0",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "ethers": "^5.7.2",
+    "mongoose": "^8.15.0"
+  }
+} 
