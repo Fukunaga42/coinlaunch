@@ -145,11 +145,44 @@ interface TokenDetailProps {
         setTransactionFetchError(null);
       } catch (error) {
         console.error('Error fetching token data:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        setTransactionFetchError(errorMessage);
-        // Set empty transactions on error to show error state in UI
-        setTransactions([]);
-        setTotalTransactionPages(1);
+        
+        // If subgraph fails, try to fetch from our backend API
+        try {
+          console.log("Subgraph failed, trying backend API...");
+          const response = await fetch(`/api/tokens/${address}`);
+          if (response.ok) {
+            const tokenData = await response.json();
+            console.log("Successfully fetched token from backend API:", tokenData);
+            
+            const tokenWithTransactions = {
+              ...tokenData,
+              transactions: {
+                data: [],
+                pagination: {
+                  currentPage: 1,
+                  pageSize: 10,
+                  totalCount: 0,
+                  totalPages: 1
+                }
+              }
+            };
+            setTokenInfo(tokenWithTransactions);
+            
+            // For transactions, we still show empty for now
+            setTransactions([]);
+            setTotalTransactionPages(1);
+            setTransactionFetchError("Transactions not available for this token");
+          } else {
+            throw new Error('Failed to fetch from backend API');
+          }
+        } catch (apiError) {
+          console.error('Backend API also failed:', apiError);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          setTransactionFetchError(errorMessage);
+          // Set empty transactions on error to show error state in UI
+          setTransactions([]);
+          setTotalTransactionPages(1);
+        }
       } finally {
         setIsLoadingTransactions(false);
       }
@@ -662,8 +695,44 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   } catch (error) {
     console.error('Error fetching token data from subgraph:', error);
+    
+    // Instead of returning notFound, return a minimal token object
+    // The client-side will fetch the real data
+    const minimalTokenInfo = {
+      id: address,
+      chainId: 11155111,
+      address: address,
+      creatorAddress: '',
+      name: 'Loading...',
+      symbol: '...',
+      logo: null,
+      description: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      website: '',
+      youtube: '',
+      discord: '',
+      twitter: '',
+      telegram: '',
+      latestTransactionTimestamp: new Date().toISOString(),
+      _count: {
+        liquidityEvents: 0
+      },
+      transactions: {
+        data: [],
+        pagination: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 0,
+          totalPages: 1
+        }
+      }
+    };
+    
     return {
-      notFound: true,
+      props: {
+        initialTokenInfo: minimalTokenInfo,
+      },
     };
   }
 };
