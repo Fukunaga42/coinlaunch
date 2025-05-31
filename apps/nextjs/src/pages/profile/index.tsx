@@ -406,6 +406,78 @@ const ProfilePage: React.FC = () => {
                 </div>
             )}
 
+            {activeTab === "created" && (
+                <div>
+                  {isLoading ? (
+                      <div className="flex justify-center py-8">
+                        <LoadingBar size="medium" />
+                      </div>
+                  ) : createdTokens.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {createdTokens.map((token) => (
+                            <div
+                                key={token.address}
+                                className="bg-[var(--card)] rounded-lg p-3 sm:p-4 cursor-pointer hover:bg-[var(--card-hover)] transition-colors duration-200 flex items-start relative"
+                                onClick={() => handleTokenClick(token.address)}
+                            >
+                              {connectedAddress &&
+                                  connectedAddress.toLowerCase() ===
+                                  addressToUse.toLowerCase() &&
+                                  isTokenIncomplete(token) && (
+                                      <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedToken(token);
+                                            setIsUpdateModalOpen(true);
+                                          }}
+                                          className="absolute top-2 right-2 p-2 rounded-full bg-[var(--card-boarder)] hover:bg-[#444444] transition-colors duration-200"
+                                      >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 text-gray-400"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                        </svg>
+                                      </button>
+                                  )}
+                              {token.logo && (
+                                  <img
+                                      src={token.logo || "/chats/noimg.svg"}
+                                      alt={`${token.name} logo`}
+                                      className="w-16 h-16 mr-3 sm:mr-4 rounded-lg"
+                                  />
+                              )}
+                              <div>
+                                <h3 className="text-xs sm:text-sm font-semibold text-white mb-1">
+                                  {token.name}{" "}
+                                  <span className="text-gray-400">
+                            ({token.symbol})
+                          </span>
+                                </h3>
+                                <p className="text-gray-400 text-[9px] sm:text-xs">
+                                  {token.description}
+                                </p>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                  ) : (
+                      <p className="text-gray-400 text-center text-sm sm:text-base">
+                        No tokens created
+                      </p>
+                  )}
+                  {createdTokensTotalPages > 1 && (
+                      <Pagination
+                          currentPage={createdTokensPage}
+                          totalPages={createdTokensTotalPages}
+                          onPageChange={handleCreatedTokensPageChange}
+                      />
+                  )}
+                </div>
+            )}
+
           </div>
 
           <div>
