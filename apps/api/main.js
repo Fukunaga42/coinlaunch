@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const uploadRoute = require("./routes/upload");
 const { connectDB } = require("./services/db");
+const authenticateWithPrivy = require("./middleware/authenticateWithPrivy");
 
 const app = express();
 const PORT = process.env.PORT || 5050;
