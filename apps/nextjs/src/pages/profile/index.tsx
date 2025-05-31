@@ -249,6 +249,9 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     if (!ready || !addressToUse) return;
 
+    console.log("🔍 Privy user object:", user);
+    console.log("🔍 Linked accounts:", user?.linkedAccounts);
+
     // Get Twitter ID from linked accounts
     const twitter = user?.linkedAccounts?.find(
         (acc) => acc.type === "twitter_oauth"
