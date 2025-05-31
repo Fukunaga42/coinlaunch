@@ -1,4 +1,4 @@
-import { GetServerSideProps } from 'next';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
@@ -43,21 +43,14 @@ import Chats from '@/components/TokenDetails/Chats';
 // import OGPreview from '@/components/OGPreview'
 
 
-interface TokenDetailProps {
-  initialTokenInfo: TokenWithTransactions;
-  initialPriceHistory: any[];
-  initialHolders: any[];
-}
-
-// const TokenDetail: React.FC = () => {
-  const TokenDetail: React.FC<TokenDetailProps> = ({ initialTokenInfo }) => {
-  console.log("TokenDetail component initialized with initialTokenInfo:", initialTokenInfo);
+const TokenDetail: React.FC = () => {
   const router = useRouter();
   const { address } = router.query;
   const { address: userAddress } = useAccount();
 
   const [isApproved, setIsApproved] = useState(false);
-  const [tokenInfo, setTokenInfo] = useState<TokenWithTransactions>(initialTokenInfo);
+  const [tokenInfo, setTokenInfo] = useState<TokenWithTransactions | null>(null);
+  const [isLoadingTokenInfo, setIsLoadingTokenInfo] = useState(true);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionPage, setTransactionPage] = useState(1);
@@ -137,6 +130,10 @@ interface TokenDetailProps {
           }
         };
         setTokenInfo(tokenWithTransactions);
+        setIsLoadingTokenInfo(false);
+        
+        // Initialize token symbols for swap interface
+        setToToken(prev => ({ ...prev, symbol: tokenData.symbol }));
         
         // Fetch transactions from The Graph subgraph
         const transactionData = await fetchTokenTransactions(address as string, page, 10);
@@ -147,6 +144,7 @@ interface TokenDetailProps {
         console.error('Error fetching token data:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         setTransactionFetchError(errorMessage);
+        setIsLoadingTokenInfo(false);
         // Set empty transactions on error to show error state in UI
         setTransactions([]);
         setTotalTransactionPages(1);
@@ -209,13 +207,15 @@ interface TokenDetailProps {
 
       
       try {
-        const events = await getTokenLiquidityEvents(tokenInfo.id);
-        setLiquidityEvents(events);
+        if (tokenInfo?.id) {
+          const events = await getTokenLiquidityEvents(tokenInfo.id);
+          setLiquidityEvents(events);
+        }
       } catch (error) {
         console.error('Error fetching liquidity events:', error);
       }
     }
-  }, [address, transactionPage, fetchTokenData, fetchHistoricalPriceData, refetchCurrentPrice, refetchLiquidity, tokenInfo.id, refetchUserBalance]);
+  }, [address, transactionPage, fetchTokenData, fetchHistoricalPriceData, refetchCurrentPrice, refetchLiquidity, tokenInfo?.id, refetchUserBalance]);
 
   useEffect(() => {
     fetchAllData();
@@ -288,11 +288,11 @@ interface TokenDetailProps {
   const handleSwap = useCallback(() => {
     setIsSwapped((prev) => !prev);
     setFromToken((prev) => ({
-      symbol: prev.symbol === 'ETH' ? tokenInfo.symbol : 'ETH',
+      symbol: prev.symbol === 'ETH' ? (tokenInfo?.symbol || '') : 'ETH',
       amount: '',
     }));
     setToToken((prev) => ({
-      symbol: prev.symbol === 'ETH' ? tokenInfo.symbol : 'ETH',
+      symbol: prev.symbol === 'ETH' ? (tokenInfo?.symbol || '') : 'ETH',
       amount: '',
     }));
   }, [tokenInfo]);
@@ -633,39 +633,6 @@ interface TokenDetailProps {
   );
 };
 
-//simple server-side rendering using subgraph for token info - for SEO purposes
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { address } = context.params as { address: string };
 
-  try {
-    // Use subgraph for token info instead of API
-    const tokenData = await getTokenInfoFromSubgraph(address);
-    
-    // Create a TokenWithTransactions object to match expected format
-    const tokenInfo = {
-      ...tokenData,
-      transactions: {
-        data: [],
-        pagination: {
-          currentPage: 1,
-          pageSize: 10,
-          totalCount: 0,
-          totalPages: 1
-        }
-      }
-    };
-
-    return {
-      props: {
-        initialTokenInfo: tokenInfo,
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching token data from subgraph:', error);
-    return {
-      notFound: true,
-    };
-  }
-};
 
 export default TokenDetail;
