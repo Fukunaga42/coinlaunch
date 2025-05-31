@@ -14,7 +14,7 @@ class XService {
     try {
       const tokens = this.xOAuth2Service.loadUserBearerToken();
       if (!tokens) {
-        console.warn("⚠️ No X/Twitter access token found - OAuth2 flow needed");
+        // Don't warn here - main.js will show the OAuth status
         this.userBearerToken = null;
         this.isAuthenticated = false;
       } else {
@@ -150,12 +150,13 @@ class XService {
 
   // Extract token info from tweet text
   extractTokenData(tweetText) {
-    // Match pattern: @coinlaunchnow launch <token_name> <token_symbol>
-    const pattern = /@coinlaunchnow\s+launch\s+(.+?)\s+(\S+)$/i;
+    // Match pattern: @coinlaunchnow $<token_name> $<token_symbol>
+    // Example: @coinlaunchnow $BITCOIN $BTC
+    const pattern = /@coinlaunchnow\s+\$(\S+)\s+\$(\S+)/i;
     const match = tweetText.match(pattern);
     
     if (!match) {
-      return { success: false, error: 'Invalid format' };
+      return { success: false, error: 'Invalid format. Use: @coinlaunchnow $NAME $SYMBOL' };
     }
 
     const tokenName = match[1].trim();
@@ -194,7 +195,7 @@ class XService {
       // Add new rule
       await this.apiClient.post(this.rulesUrl, {
         add: [{
-          value: '@coinlaunchnow "launch"',
+          value: '@coinlaunchnow "$"',
           tag: 'launch-token-mentions'
         }]
       }, {
@@ -269,13 +270,13 @@ class XService {
       }
 
       // Get tweet attachments if any
-      let tokenImageUrl = userData.profile_image_url;
+      let logo = userData.profile_image_url;
       
       if (tweet.includes?.media) {
         const imageMedia = tweet.includes.media.find(m => m.type === 'photo');
         if (imageMedia) {
-          tokenImageUrl = imageMedia.url;
-          console.log('📷 Using image from tweet:', tokenImageUrl);
+          logo = imageMedia.url;
+          console.log('📷 Using image from tweet:', logo);
         }
       }
 
@@ -288,7 +289,7 @@ class XService {
         xPostId: tweet.data.id,
         twitterUsername: userData.username,
         twitterAuthorId: authorId,
-        tokenImageUrl: tokenImageUrl,
+        logo: logo,
         createdAt: new Date()
       });
 
@@ -325,7 +326,7 @@ class XService {
         const mockTweet = {
           data: {
             id: `mock_${Date.now()}`,
-            text: '@coinlaunchnow launch MockToken MOCK',
+            text: '@coinlaunchnow $MockToken $MOCK',
             author_id: 'mock_user_123',
             created_at: new Date().toISOString()
           },

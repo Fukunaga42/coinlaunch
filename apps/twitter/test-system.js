@@ -139,50 +139,46 @@ async function testSystem() {
         console.error('❌ Error checking token statuses:', error.message);
     }
     
-    // Test 6: Simulate token creation
-    console.log('\n6️⃣ Simulating token creation flow...');
+    // Test token extraction
+    console.log('\n🧪 Testing token extraction...');
     try {
-        const testTweet = {
+        const XService = require('./services/XService');
+        const xService = XService.getInstance();
+        
+        const validTweet = {
             data: {
-                id: 'test_tweet_' + Date.now(),
-                text: '@coinlaunchnow launch TestToken TEST',
-                author_id: 'test_author_123'
+                id: 'test_tweet_123',
+                text: '@coinlaunchnow $TestToken $TEST',
+                author_id: 'test_user_123'
             }
         };
         
-        const XService = require('./services/XService');
-        const xService = XService.getInstance();
-        const extraction = xService.extractTokenData(testTweet.data.text);
+        const extraction = xService.extractTokenData(validTweet.data.text);
+        console.log('Token extraction result:', extraction);
         
-        if (extraction.success) {
-            console.log(`✅ Token extraction successful: ${extraction.tokenName} (${extraction.tokenSymbol})`);
-        } else {
-            console.log(`❌ Token extraction failed: ${extraction.error}`);
-        }
-        
-        // Test various invalid formats
-        const invalidTests = [
-            '@coinlaunchnow launch Test',  // Missing symbol
-            '@coinlaunchnow launch T T',    // Too short name
-            '@coinlaunchnow launch Test!Token TEST',  // Invalid characters
-            '@coinlaunchnow launch TestToken VERYLONGSYMBOL',  // Symbol too long
+        // Test invalid formats
+        console.log('\n🧪 Testing invalid formats...');
+        const invalidFormats = [
+            '@coinlaunchnow $Test',  // Missing symbol
+            '@coinlaunchnow $T $T',    // Too short name
+            '@coinlaunchnow $Test!Token $TEST',  // Invalid characters
+            '@coinlaunchnow $TestToken $VERYLONGSYMBOL',  // Symbol too long
         ];
         
-        console.log('\nTesting invalid formats:');
-        invalidTests.forEach(text => {
+        invalidFormats.forEach(text => {
             const result = xService.extractTokenData(text);
-            console.log(`  "${text}" - ${result.success ? '✅' : `❌ ${result.error}`}`);
+            console.log(`Format "${text}" - ${result.success ? '✅' : `❌ ${result.error}`}`);
         });
     } catch (error) {
-        console.error('❌ Error in token creation simulation:', error.message);
+        console.error('❌ Error testing token extraction:', error.message);
     }
     
     console.log('\n✅ System test completed!');
     console.log('\n📝 Next steps:');
-    console.log('1. Complete OAuth2 flow: http://localhost:5050/api/twitter/login');
+    console.log('1. Complete OAuth2 flow: http://localhost:5051/auth/twitter/login');
     console.log('2. Enable Twitter listener: ENABLE_TWITTER_LISTENER=true');
     console.log('3. Fund your funding wallet with ETH');
-    console.log('4. Test with a real tweet mentioning @coinlaunchnow');
+    console.log('4. Test with a real tweet: @coinlaunchnow $YourToken $SYMBOL');
     console.log('5. For testing without API calls, set XService.ShouldMock = true');
     
     process.exit(0);
