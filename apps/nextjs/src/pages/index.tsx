@@ -40,6 +40,7 @@ const Home: React.FC = () => {
   const [showNewTokens, setShowNewTokens] = useState(false);
   const [newTokensBuffer, setNewTokensBuffer] = useState<Token[]>([]);
   const [displayedNewTokens, setDisplayedNewTokens] = useState<Token[]>([]);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { newTokens } = useWebSocket();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
@@ -53,6 +54,30 @@ const Home: React.FC = () => {
     console.log('Effect triggered. Current sort:', sort, 'Current page:', currentPage, 'Search:', searchQuery);
     fetchTokens();
   }, [currentPage, sort, searchQuery]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+          window.innerHeight + document.documentElement.scrollTop >=
+          document.documentElement.offsetHeight - 300 &&
+          !isFetchingMore &&
+          !isLoading &&
+          tokens &&
+          currentPage < (tokens.totalPages || 1)
+      ) {
+        setIsFetchingMore(true);
+        setCurrentPage(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isFetchingMore, isLoading, tokens, currentPage]);
+
+  useEffect(() => {
+    fetchTokens(currentPage);
+  }, [currentPage, sort, searchQuery]);
+
 
   useEffect(() => {
     // console.log('New tokens received:', newTokens);
@@ -84,38 +109,42 @@ const Home: React.FC = () => {
     }
   }, [newTokens, showNewTokens]);
 
-  const fetchTokens = async () => {
-    setIsLoading(true);
-    setNoRecentTokens(false);
-    setNoLiquidityTokens(false);
+  const fetchTokens = async (page = 1) => {
+    setIsLoading(page === 1);  // only show spinner on first load
     setError(null);
-    let fetchedTokens;
 
     try {
-      if (searchQuery.trim() && searchQuery !== '__all__') {
-        fetchedTokens = await searchTokens(searchQuery, currentPage, TOKENS_PER_PAGE);
+      let fetchedTokens;
+      const query = searchQuery.trim() || '__all__';
+      fetchedTokens = await searchTokens(query, page, TOKENS_PER_PAGE);
+
+      const newData = fetchedTokens.data || fetchedTokens.tokens || [];
+
+      if (page === 1) {
+        setTokens({
+          data: newData,
+          totalCount: fetchedTokens.totalCount,
+          currentPage: page,
+          totalPages: fetchedTokens.totalPages || 1,
+          tokens: [],
+          fullList: [],
+        });
       } else {
-        const allQuery = '__all__';
-        // fetch default (recent) tokens
-        fetchedTokens = await searchTokens(allQuery, currentPage, TOKENS_PER_PAGE);
+        setTokens(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            data: [...prev.data, ...newData],
+            currentPage: page,
+          };
+        });
       }
-
-      const adjustedTokens: PaginatedResponse<Token | TokenWithLiquidityEvents> = {
-        data: fetchedTokens.data || fetchedTokens.tokens || [],
-        totalCount: fetchedTokens.totalCount,
-        currentPage: fetchedTokens.currentPage || 1,
-        totalPages: fetchedTokens.totalPages || 1,
-        tokens: [],
-        // fullList: fetchedTokens.fullList 
-        fullList: []
-      };
-
-      setTokens(adjustedTokens);
     } catch (error) {
       console.error('Error fetching tokens:', error);
       setError('Failed to fetch tokens. Please try again later.');
     } finally {
       setIsLoading(false);
+      setIsFetchingMore(false);
     }
   };
 
