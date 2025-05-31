@@ -24,7 +24,7 @@ const uploadToIPFS = async (filePath, originalName) => {
     );
 
     const ipfsHash = response.data.IpfsHash;
-    const url = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+    const url = `https://i.degencdn.com/ipfs/${ipfsHash}`;
 
     return {
         ipfsHash,
