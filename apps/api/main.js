@@ -190,7 +190,7 @@ app.get('/api/tokens/search', async (req, res) => {
   const pageNum = parseInt(page);
   const limit = parseInt(pageSize);
 
-  let filter = {};
+  let filter = { status: "COMMENTED" };
 
   if (q !== '__all__') {
     if (typeof q !== 'string' || !q.trim()) {
@@ -199,14 +199,13 @@ app.get('/api/tokens/search', async (req, res) => {
 
     const searchRegex = new RegExp(q.trim(), 'i');
 
-    filter = {
-      $or: [
-        { name: { $regex: searchRegex } },
-        { symbol: { $regex: searchRegex } },
-        { twitter: { $regex: searchRegex } },
-      ]
-    };
+    filter.$or = [
+      { name: { $regex: searchRegex } },
+      { symbol: { $regex: searchRegex } },
+      { twitter: { $regex: searchRegex } },
+    ];
   }
+
 
   console.log('[DEBUG] MongoDB search filter:', filter);
 
