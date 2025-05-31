@@ -148,7 +148,7 @@ async function testSystem() {
         const validTweet = {
             data: {
                 id: 'test_tweet_123',
-                text: '@coinlaunchnow $TestToken $TEST',
+                text: '@coinlaunchnow launch $TestToken $TEST',
                 author_id: 'test_user_123'
             }
         };
@@ -159,10 +159,11 @@ async function testSystem() {
         // Test invalid formats
         console.log('\n🧪 Testing invalid formats...');
         const invalidFormats = [
-            '@coinlaunchnow $Test',  // Missing symbol
-            '@coinlaunchnow $T $T',    // Too short name
-            '@coinlaunchnow $Test!Token $TEST',  // Invalid characters
-            '@coinlaunchnow $TestToken $VERYLONGSYMBOL',  // Symbol too long
+            '@coinlaunchnow launch $Test',  // Missing symbol
+            '@coinlaunchnow launch $T $T',    // Too short name
+            '@coinlaunchnow launch $Test!Token $TEST',  // Invalid characters
+            '@coinlaunchnow launch $TestToken $VERYLONGSYMBOL',  // Symbol too long
+            '@coinlaunchnow $TestToken $TEST',  // Missing "launch" keyword
         ];
         
         invalidFormats.forEach(text => {
@@ -178,7 +179,7 @@ async function testSystem() {
     console.log('1. Complete OAuth2 flow: http://localhost:5051/auth/twitter/login');
     console.log('2. Enable Twitter listener: ENABLE_TWITTER_LISTENER=true');
     console.log('3. Fund your funding wallet with ETH');
-    console.log('4. Test with a real tweet: @coinlaunchnow $YourToken $SYMBOL');
+    console.log('4. Test with a real tweet: @coinlaunchnow launch $YourToken $SYMBOL');
     console.log('5. For testing without API calls, set XService.ShouldMock = true');
     
     process.exit(0);
