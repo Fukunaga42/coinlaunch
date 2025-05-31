@@ -4,41 +4,32 @@ pragma solidity ^0.8.28;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-interface IUniswapV2Router02 {
-    function addLiquidityETH(
-        address token,
-        uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline
-    )
-        external
-        payable
-        returns (uint amountToken, uint amountETH, uint liquidity);
+// Uniswap V4 Core Imports
+import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
+import {IUnlockCallback} from "v4-core/src/interfaces/callback/IUnlockCallback.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
+import {Currency, CurrencyLibrary} from "v4-core/src/types/Currency.sol";
+import {TickMath} from "v4-core/src/libraries/TickMath.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 
-    function WETH() external view returns (address);
-}
+// Uniswap V4 Periphery Imports
+import {IPositionManager} from "v4-periphery/src/interfaces/IPositionManager.sol";
+import {Actions} from "v4-periphery/src/libraries/Actions.sol";
+
 
 interface IWETH {
     function deposit() external payable;
-
     function withdraw(uint256) external;
-
     function approve(address spender, uint256 amount) external returns (bool);
-
     function transfer(address to, uint256 value) external returns (bool);
-
     function balanceOf(address owner) external view returns (uint256);
 }
 
 interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
-
     function balanceOf(address account) external view returns (uint256);
-
     function transfer(address to, uint256 value) external returns (bool);
-
     function transferFrom(
         address from,
         address to,
@@ -117,7 +108,10 @@ contract PumpToken {
     }
 }
 
-contract BondingCurveManager is Ownable, ReentrancyGuard {
+contract BondingCurveManager is Ownable, ReentrancyGuard, IUnlockCallback {
+    using PoolIdLibrary for PoolKey;
+    using CurrencyLibrary for Currency;
+
     // Custom Errors
     error FailedToSendEth();
     error InsufficientPoolbalance();
@@ -130,6 +124,7 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
     error TokenTransferFailed();
     error ZeroEthSent();
     error ZeroTokenAmount();
+    error Unauthorized();
 
     struct TokenInfo {
         address creator;
@@ -141,10 +136,23 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         bool liquidityMigrated;
     }
 
+    struct MigrationData {
+        address tokenAddress;
+        uint256 ethAmount;
+        uint256 tokenAmount;
+    }
+
     mapping(address => TokenInfo) public tokenInfos;
 
-    address public uniswapRouter;
+    // Uniswap V4 Contracts
+    IPoolManager public poolManager;
+    IPositionManager public positionManager;
     address public WETH;
+
+    // Uniswap V4 Configuration
+    uint24 public constant UNISWAP_FEE_TIER = 10000; // 1% fee
+    int24 public constant TICK_SPACING = 200; // Appropriate for 1% fee tier
+    address public constant HOOK_ADDRESS = address(0); // Placeholder for future hooks
 
     uint256 public V_ETH_RESERVE;
     uint256 public V_TOKEN_RESERVE;
@@ -182,12 +190,16 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         uint256 tokenAmount,
         uint256 ethAmount
     );
-
     event ClaimedFee(uint256 amount);
 
-    constructor(address _router) Ownable(msg.sender) {
-        uniswapRouter = _router;
-        WETH = IUniswapV2Router02(_router).WETH();
+    constructor(
+        address _poolManager,
+        address _positionManager,
+        address _weth
+    ) Ownable(msg.sender) {
+        poolManager = IPoolManager(_poolManager);
+        positionManager = IPositionManager(_positionManager);
+        WETH = _weth;
 
         V_ETH_RESERVE = 15 ether / 1000;
         V_TOKEN_RESERVE = 1073000000 ether;
@@ -195,6 +207,20 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         TRADE_FEE_BPS = 100; // 1% fee in basis points
         BPS_DENOMINATOR = 10000;
         GRADUATION_THRESHOLD = 0.5 ether; // ETH threshold for graduation
+    }
+
+    // IUnlockCallback implementation
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
+        // Ensure only the PoolManager can call this
+        if (msg.sender != address(poolManager)) revert Unauthorized();
+        
+        // Decode the migration data
+        MigrationData memory migrationData = abi.decode(data, (MigrationData));
+        
+        // Execute the migration logic
+        _executeMigration(migrationData);
+        
+        return "";
     }
 
     function create(
@@ -236,7 +262,7 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
                 info.rReserveEth >= GRADUATION_THRESHOLD &&
                 !info.liquidityMigrated
             ) {
-                _migrateToUniswap(address(token));
+                _migrateToUniswapV4(address(token));
             }
         }
         info.liquidityMigrated = false;
@@ -296,7 +322,7 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         if (
             info.rReserveEth >= GRADUATION_THRESHOLD && !info.liquidityMigrated
         ) {
-            _migrateToUniswap(_token);
+            _migrateToUniswapV4(_token);
         }
     }
 
@@ -337,8 +363,8 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
         emit TokensSold(_token, msg.sender, tokenAmount, netEthOut);
     }
 
-    // Internal function to migrate liquidity to Uniswap
-    function _migrateToUniswap(address tokenAddress) internal {
+    // Internal function to migrate liquidity to Uniswap V4
+    function _migrateToUniswapV4(address tokenAddress) internal {
         TokenInfo storage info = tokenInfos[tokenAddress];
 
         // Mark as migrated first to prevent reentrancy
@@ -355,26 +381,92 @@ contract BondingCurveManager is Ownable, ReentrancyGuard {
             PumpToken(tokenAddress).mintFromFactory(address(this), tokensForLP);
         }
 
-        // Approve router to spend tokens
-        if (tokensForLP > 0) {
-            IERC20(tokenAddress).approve(uniswapRouter, tokensForLP);
-        }
-
-        // Add liquidity to Uniswap (simplified - in production you'd want more sophisticated logic)
         if (ethForLP > 0 && tokensForLP > 0) {
-            IUniswapV2Router02(uniswapRouter).addLiquidityETH{value: ethForLP}(
-                tokenAddress,
-                tokensForLP,
-                0, // Accept any amount of tokens
-                0, // Accept any amount of ETH
-                address(0), // Burn LP tokens (or send to creator)
-                block.timestamp + 300 // 5 minute deadline
-            );
+            // Wrap ETH to WETH for V4 compatibility
+            IWETH(WETH).deposit{value: ethForLP}();
+
+            // Prepare migration data
+            MigrationData memory migrationData = MigrationData({
+                tokenAddress: tokenAddress,
+                ethAmount: ethForLP,
+                tokenAmount: tokensForLP
+            });
+
+            // Use unlock pattern to execute migration
+            poolManager.unlock(abi.encode(migrationData));
+
             emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
         } else {
             // Even if no liquidity to add, emit event for graduation
             emit LiquidityAdded(tokenAddress, ethForLP, tokensForLP);
         }
+    }
+
+    function _executeMigration(MigrationData memory data) internal {
+        // Create pool key
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(address(0)), // ETH (native currency)
+            currency1: Currency.wrap(data.tokenAddress),
+            fee: UNISWAP_FEE_TIER,
+            tickSpacing: TICK_SPACING,
+            hooks: IHooks(HOOK_ADDRESS) // No hooks for now
+        });
+
+        // Ensure proper currency ordering (currency0 < currency1)
+        if (uint160(address(0)) > uint160(data.tokenAddress)) {
+            (key.currency0, key.currency1) = (key.currency1, key.currency0);
+        }
+
+        // Check if pool exists, initialize if needed
+        PoolId poolId = key.toId();
+        
+        // Try to initialize the pool (will revert if already initialized)
+        try poolManager.initialize(key, TickMath.getSqrtPriceAtTick(0), "") {
+            // Pool was successfully initialized
+        } catch {
+            // Pool already exists, continue
+        }
+
+        // Prepare full-range position
+        int24 tickLower = TickMath.minUsableTick(TICK_SPACING);
+        int24 tickUpper = TickMath.maxUsableTick(TICK_SPACING);
+
+        // Approve tokens for position manager
+        IERC20(WETH).approve(address(positionManager), data.ethAmount);
+        IERC20(data.tokenAddress).approve(address(positionManager), data.tokenAmount);
+
+        // Define actions for minting position
+        bytes memory actions = abi.encodePacked(
+            Actions.MINT_POSITION,
+            Actions.SETTLE_PAIR
+        );
+
+        // Prepare parameters
+        bytes[] memory params = new bytes[](2);
+        
+        // Parameters for MINT_POSITION
+        params[0] = abi.encode(
+            key,                    // PoolKey
+            tickLower,              // Lower tick
+            tickUpper,              // Upper tick
+            uint256(1000000),       // Liquidity amount (will be calculated)
+            data.ethAmount,         // Max amount0
+            data.tokenAmount,       // Max amount1
+            address(0),             // Burn the position NFT
+            ""                      // No hook data
+        );
+
+        // Parameters for SETTLE_PAIR
+        params[1] = abi.encode(
+            key.currency0,          // Currency0
+            key.currency1           // Currency1
+        );
+
+        // Execute the position creation
+        positionManager.modifyLiquidities(
+            abi.encode(actions, params),
+            block.timestamp + 300   // 5 minute deadline
+        );
     }
 
     function updateFeeRate(uint256 value) external onlyOwner {

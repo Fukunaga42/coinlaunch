@@ -12,6 +12,7 @@ typechain-types/
 # solidity-coverage files
 coverage/
 coverage.json
+lib/
 
 # Hardhat Ignition default folder for deployments against a local node
 ignition
