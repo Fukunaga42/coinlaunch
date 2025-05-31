@@ -4,6 +4,7 @@ const uploadRoute = require("./routes/upload");
 const { connectDB } = require("./services/db");
 const authenticateWithPrivy = require("./middleware/authenticateWithPrivy");
 const Token = require("./models/Token");
+const {HttpStatusCode} = require("axios");
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -21,12 +22,12 @@ app.get("/", (req, res) => {
   console.log("👋 Root route hit");
   res.send("Hackathon is up and running!");
 });
-app.get("/privy", authenticateWithPrivy, async (req, res) => {
-  return res.status(HttpStatusCode.Ok).json({
-    success: true,
-    message: "Authentication successful",
+  app.get("/privy", authenticateWithPrivy, async (req, res) => {
+    return res.status(HttpStatusCode.Ok).json({
+      success: true,
+      message: "Authentication successful",
+    });
   });
-});
 
 app.patch("/api/tokens/update/:address", async (req, res) => {
   const address = req.params.address;

@@ -103,20 +103,9 @@ const Navbar: React.FC = () => {
   const router = useRouter()
 
   const handleProfileClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    if (!address) {
-      toast.error('Please connect your wallet first', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      })
-      return
-    }
-    router.push(`/profile/${address}`)
-  }
+    e.preventDefault();
+    router.push('/profile');
+  };
 
   return (
     <>
@@ -151,12 +140,12 @@ const Navbar: React.FC = () => {
               <Link href="https://x.com/coinlaunchnow" target="_blank" className="text-gray-300 hover:text-white">
                 Twitter
               </Link>
-              <button 
-                onClick={() => router.push('/create')}
-                className="bg-[var(--primary)] text-black px-4 py-2 rounded-lg font-medium hover:bg-[var(--primary-hover)]"
-              >
-                Launch Token
-              </button>
+              {/*<button */}
+              {/*  onClick={() => router.push('/create')}*/}
+              {/*  className="bg-[var(--primary)] text-black px-4 py-2 rounded-lg font-medium hover:bg-[var(--primary-hover)]"*/}
+              {/*>*/}
+              {/*  Launch Token*/}
+              {/*</button>*/}
               <CustomConnectButton />
             </div>
 
