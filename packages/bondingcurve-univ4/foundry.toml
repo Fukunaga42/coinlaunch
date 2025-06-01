@@ -1,0 +1,18 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+remappings = [
+    "v4-core/=lib/v4-core/",
+    "v4-periphery/=lib/v4-periphery/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/"
+]
+
+# Network configurations
+[rpc_endpoints]
+sepolia = "${RPC_SEPOLIA}"
+
+# [etherscan]
+# sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.etherscan.io/api" }

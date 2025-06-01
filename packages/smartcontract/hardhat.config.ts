@@ -23,7 +23,13 @@ const config: HardhatUserConfig = {
       metadata: {
         bytecodeHash: "none", 
         useLiteralContent: true, 
-      }
+      },
+      remappings: [
+        "v4-core/=lib/v4-core/",
+        "v4-periphery/=lib/v4-periphery/",
+        "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/"
+      ]
+
     },
   },
 };
