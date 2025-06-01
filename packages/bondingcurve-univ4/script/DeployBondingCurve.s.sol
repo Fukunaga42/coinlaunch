@@ -8,7 +8,6 @@ contract DeployBondingCurve is Script {
     // Uniswap V4 addresses on Sepolia
     address constant POOL_MANAGER = 0xE03A1074c86CFeDd5C142C4F04F1a1536e203543;
     address constant POSITION_MANAGER = 0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4;
-    address constant WETH = 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14; // Sepolia WETH
     
     function run() external {
         // Get private key from environment
@@ -26,7 +25,6 @@ contract DeployBondingCurve is Script {
         console.log("\nUniswap V4 Configuration:");
         console.log("PoolManager:", POOL_MANAGER);
         console.log("PositionManager:", POSITION_MANAGER);
-        console.log("WETH:", WETH);
         
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
@@ -36,8 +34,7 @@ contract DeployBondingCurve is Script {
         // Deploy the contract
         BondingCurveManager bondingCurveManager = new BondingCurveManager(
             POOL_MANAGER,
-            POSITION_MANAGER,
-            WETH
+            POSITION_MANAGER
         );
         
         vm.stopBroadcast();
@@ -50,7 +47,6 @@ contract DeployBondingCurve is Script {
         console.log("\nVerifying contract configuration...");
         console.log("Pool Manager:", address(bondingCurveManager.poolManager()));
         console.log("Position Manager:", address(bondingCurveManager.positionManager()));
-        console.log("WETH:", bondingCurveManager.WETH());
         console.log("Owner:", bondingCurveManager.owner());
         
         // Display contract parameters
@@ -81,6 +77,5 @@ contract DeployBondingCurve is Script {
         console.log("Deployer:", deployer);
         console.log("PoolManager:", POOL_MANAGER);
         console.log("PositionManager:", POSITION_MANAGER);
-        console.log("WETH:", WETH);
     }
 }

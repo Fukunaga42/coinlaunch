@@ -16,7 +16,6 @@ contract BondingCurveManagerTest is Test {
     // Mock addresses for Uniswap V4 components
     address public mockPoolManager = address(0x1);
     address public mockPositionManager = address(0x2);
-    address public mockWETH = address(0x3);
 
     event TokenCreated(
         address indexed tokenAddress,
@@ -40,8 +39,7 @@ contract BondingCurveManagerTest is Test {
         // Deploy the BondingCurveManager with mock addresses
         manager = new BondingCurveManager(
             mockPoolManager,
-            mockPositionManager, 
-            mockWETH
+            mockPositionManager
         );
         
         // Give users some ETH for testing
@@ -61,7 +59,6 @@ contract BondingCurveManagerTest is Test {
         // Verify Uniswap V4 addresses are set
         assertEq(address(manager.poolManager()), mockPoolManager);
         assertEq(address(manager.positionManager()), mockPositionManager);
-        assertEq(manager.WETH(), mockWETH);
     }
 
     function testTokenCreationWithoutETH() public {
@@ -294,5 +291,172 @@ contract BondingCurveManagerTest is Test {
         
         assertEq(manager.totalFee(), 0);
         assertEq(owner.balance, ownerBalanceBefore + expectedFee);
+    }
+
+    function testBuyTokens() public {
+        // Create token first
+        vm.prank(user1);
+        manager.create("TestToken", "TEST");
+        
+        address tokenAddress = manager.tokenList(0);
+        PumpToken token = PumpToken(tokenAddress);
+        
+        // Get initial state
+        uint256 initialBalance = token.balanceOf(user2);
+        assertEq(initialBalance, 0);
+        
+        // Buy tokens
+        uint256 buyAmount = 0.1 ether;
+        uint256 expectedFee = (buyAmount * manager.TRADE_FEE_BPS()) / manager.BPS_DENOMINATOR();
+        
+        vm.expectEmit(true, true, false, true);
+        emit TokensBought(tokenAddress, user2, buyAmount, 0); // tokenAmount will be calculated
+        
+        vm.prank(user2);
+        manager.buy{value: buyAmount}(tokenAddress);
+        
+        // Verify tokens were received
+        uint256 finalBalance = token.balanceOf(user2);
+        assertGt(finalBalance, initialBalance);
+        
+        // Verify fee was collected
+        assertEq(manager.totalFee(), expectedFee);
+        
+        // Verify reserves were updated
+        (, , uint256 vReserveEth, uint256 vReserveToken, uint256 rReserveEth, , ) = manager.tokenInfos(tokenAddress);
+        assertGt(vReserveEth, manager.V_ETH_RESERVE());
+        assertLt(vReserveToken, manager.V_TOKEN_RESERVE());
+        assertGt(rReserveEth, 0);
+    }
+
+    function testSellTokens() public {
+        // Create token and buy some first
+        vm.prank(user1);
+        manager.create{value: 0.1 ether}("TestToken", "TEST");
+        
+        address tokenAddress = manager.tokenList(0);
+        PumpToken token = PumpToken(tokenAddress);
+        
+        // Buy more tokens
+        vm.prank(user2);
+        manager.buy{value: 0.1 ether}(tokenAddress);
+        
+        uint256 tokenBalance = token.balanceOf(user2);
+        assertGt(tokenBalance, 0);
+        
+        // Approve manager to spend tokens
+        vm.prank(user2);
+        token.approve(address(manager), tokenBalance);
+        
+        // Get initial ETH balance
+        uint256 initialEthBalance = user2.balance;
+        
+        // Sell half the tokens
+        uint256 sellAmount = tokenBalance / 2;
+        
+        vm.prank(user2);
+        manager.sell(tokenAddress, sellAmount);
+        
+        // Verify tokens were sold
+        assertEq(token.balanceOf(user2), tokenBalance - sellAmount);
+        
+        // Verify ETH was received (after fees)
+        assertGt(user2.balance, initialEthBalance);
+        
+        // Verify reserves were updated
+        (, , uint256 vReserveEth, uint256 vReserveToken, , , ) = manager.tokenInfos(tokenAddress);
+        assertLt(vReserveEth, manager.V_ETH_RESERVE() + 0.2 ether); // Should be less than initial + both buys
+        assertGt(vReserveToken, manager.V_TOKEN_RESERVE() - 0.2 ether); // Should have more tokens back
+    }
+
+    function testBuyCalculations() public {
+        // Create fresh token
+        vm.prank(user1);
+        manager.create("TestToken", "TEST");
+        
+        address tokenAddress = manager.tokenList(0);
+        
+        uint256 buyAmount = 0.05 ether;
+        
+        // Calculate expected return using view function
+        uint256 expectedTokens = manager.calculateCurvedBuyReturn(tokenAddress, buyAmount);
+        assertGt(expectedTokens, 0);
+        
+        // Execute buy
+        vm.prank(user2);
+        manager.buy{value: buyAmount}(tokenAddress);
+        
+        // Verify actual tokens received match calculation
+        PumpToken token = PumpToken(tokenAddress);
+        uint256 actualTokens = token.balanceOf(user2);
+        assertEq(actualTokens, expectedTokens);
+    }
+
+    function testSellCalculations() public {
+        // Create token and buy some
+        vm.prank(user1);
+        manager.create{value: 0.1 ether}("TestToken", "TEST");
+        
+        address tokenAddress = manager.tokenList(0);
+        PumpToken token = PumpToken(tokenAddress);
+        
+        // Buy tokens
+        vm.prank(user2);
+        manager.buy{value: 0.1 ether}(tokenAddress);
+        
+        uint256 tokenBalance = token.balanceOf(user2);
+        uint256 sellAmount = tokenBalance / 2;
+        
+        // Calculate expected ETH return
+        uint256 expectedEth = manager.calculateCurvedSellReturn(tokenAddress, sellAmount);
+        assertGt(expectedEth, 0);
+        
+        // Get initial ETH balance
+        uint256 initialEthBalance = user2.balance;
+        
+        // Approve and sell
+        vm.prank(user2);
+        token.approve(address(manager), sellAmount);
+        
+        vm.prank(user2);
+        manager.sell(tokenAddress, sellAmount);
+        
+        // Verify ETH received matches calculation
+        uint256 actualEthReceived = user2.balance - initialEthBalance;
+        assertEq(actualEthReceived, expectedEth);
+    }
+
+    function testCannotBuyZeroAmount() public {
+        vm.prank(user1);
+        manager.create("TestToken", "TEST");
+        
+        address tokenAddress = manager.tokenList(0);
+        
+        vm.prank(user2);
+        vm.expectRevert("Amount must be greater than 0");
+        manager.buy{value: 0}(tokenAddress);
+    }
+
+    function testCannotSellZeroAmount() public {
+        vm.prank(user1);
+        manager.create("TestToken", "TEST");
+        
+        address tokenAddress = manager.tokenList(0);
+        
+        vm.prank(user2);
+        vm.expectRevert("Amount must be greater than 0");
+        manager.sell(tokenAddress, 0);
+    }
+
+    function testCannotBuyInvalidToken() public {
+        vm.prank(user2);
+        vm.expectRevert("Invalid token");
+        manager.buy{value: 0.1 ether}(address(0x999));
+    }
+
+    function testCannotSellInvalidToken() public {
+        vm.prank(user2);
+        vm.expectRevert("Invalid token");
+        manager.sell(address(0x999), 100);
     }
 }
