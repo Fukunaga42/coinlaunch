@@ -140,12 +140,12 @@ const Navbar: React.FC = () => {
               <Link href="https://x.com/coinlaunchnow" target="_blank" className="text-gray-300 hover:text-white">
                 Twitter
               </Link>
-                <button 
+                {/* <button 
                 onClick={() => router.push('/create')}
                 className="bg-[var(--primary)] text-black px-4 py-2 rounded-lg font-medium hover:bg-[var(--primary-hover)]"
                 >
                 Launch Token
-                </button>
+                </button> */}
               <CustomConnectButton />
             </div>
 
