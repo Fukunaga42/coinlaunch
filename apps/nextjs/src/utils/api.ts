@@ -217,11 +217,17 @@ export async function getHistoricalPriceData(address: string): Promise<Token> {
 //eth price usd - using CoinGecko API directly from frontend
 export async function getCurrentPrice(): Promise<string> {
   try {
-    const response = await axios.get(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+    // const response = await axios.get(
+    //   'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+    // );
+    // const price = response.data.ethereum.usd.toString();
+    const response: any = await axios.get(
+      'https://eth.blockscout.com/api?module=stats&action=ethprice'
     );
-
-    const price = response.data.ethereum.usd.toString();
+    console.log('Response from ETH price API:', response);
+    // https://eth.blockscout.com/api?module=stats&action=ethprice
+    // {"message":"OK","result":{"ethbtc":"0.0241922","ethbtc_timestamp":"1748735912","ethusd":"2531.81","ethusd_timestamp":"1748735912"},"status":"1"}
+    const price = response?.data.result.ethusd.toString();
     console.log('Current ETH price in USD:', price);
     // { price: '112220.6034' }
     return price;
