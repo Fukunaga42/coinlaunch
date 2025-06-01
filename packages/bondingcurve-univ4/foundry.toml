@@ -12,7 +12,8 @@ remappings = [
 
 # Network configurations
 [rpc_endpoints]
-sepolia = "${RPC_SEPOLIA}"
+sepolia = "${RPC_SEPOLIA}" # deployed on 0x02Ad99974795E05d4FA37cC37E0d927446B77954
+worldchain = "${RPC_WORLDCHAIN}" # deployed on 0xaa91a82e43a06E30BFd9F576b43bbEc7c8a5AAD7
 
 # [etherscan]
 # sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.etherscan.io/api" }
