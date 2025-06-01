@@ -29,7 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else {
       console.error(error);
     }
-    debugger;
+    console.error(error);
+
     res.status(400).json({ error: "Backend call failed" });
   }
 }
