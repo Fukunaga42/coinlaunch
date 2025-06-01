@@ -1,5 +1,5 @@
 import { Chain } from 'viem'
-import { flare, sepolia } from 'wagmi/chains'
+import { sepolia } from 'wagmi/chains'
 
 interface ChainConfig {
   apiBaseUrl: string
@@ -24,21 +24,43 @@ const sepoliaConfig: ChainConfig = {
   ].filter(Boolean)
 }
 
-// Flare Chain Configuration
-// const flareConfig: ChainConfig = {
-//   apiBaseUrl: process.env.FLARE_NEXT_PUBLIC_API_BASE_URL!,
-//   wsBaseUrl: process.env.FLARE_NEXT_PUBLIC_WS_BASE_URL!,
-//   blockscoutUrl: process.env.FLARE_NEXT_PUBLIC_BLOCKSCOUT_URL!,
-//   dexTarget: Number(process.env.FLARE_NEXT_PUBLIC_DEX_TARGET),
-//   contractAddresses: [
-//     process.env.FLARE_NEXT_PUBLIC_SEPOLIA_BONDING_CURVE_MANAGER_ADDRESS!
-//   ].filter(Boolean)
-// }
+// Custom WorldChain definition
+const worldChain: Chain = {
+  id: 480,
+  name: 'World Chain',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_WORLDCHAIN_API_BASE_URL!],
+    },
+    public: {
+      http: [process.env.NEXT_PUBLIC_WORLDCHAIN_API_BASE_URL!],
+    },
+  },
+  blockExplorers: {
+    default: { name: 'WorldScan', url: process.env.NEXT_PUBLIC_WORLDCHAIN_BLOCKSCOUT_URL! },
+  },
+}
+
+// WorldChain Configuration
+const worldChainConfig: ChainConfig = {
+  apiBaseUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_API_BASE_URL!,
+  wsBaseUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_WS_BASE_URL!,
+  blockscoutUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_BLOCKSCOUT_URL!,
+  dexTarget: Number(process.env.NEXT_PUBLIC_WORLDCHAIN_DEX_TARGET),
+  contractAddresses: [
+    process.env.NEXT_PUBLIC_WORLDCHAIN_BONDING_CURVE_MANAGER_ADDRESS!
+  ].filter(Boolean)
+}
 
 // Chain configurations mapped by chainId
 export const chainConfigs: ChainConfigs = {
   [sepolia.id]: sepoliaConfig,
-  // [flare.id]: flareConfig,
+  [480]: worldChainConfig,
 }
 
 // Custom Sepolia chain with your specific RPC URL
@@ -54,8 +76,13 @@ const customSepolia: Chain = {
   },
 }
 
+
+
 // Supported chains for the application with custom RPC URLs
-export const supportedChains: Chain[] = [customSepolia]
+export const supportedChains: Chain[] = [
+  customSepolia,
+  worldChain,
+]
 
 // Helper function to get chain configuration by chainId
 export const getChainConfig = (chainId: number): ChainConfig | undefined => {

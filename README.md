@@ -24,8 +24,8 @@ This monorepo contains multiple apps and packages:
 ### Packages
 
 - **`packages/ui`** - Shared UI components
-- **`packages/smartcontract`** - Smart contracts
-- **`packages/subgraph`** - The Graph protocol integration
+- **`packages/bondingcurve-univ4`** - Smart contracts WIP : Bonding curve + UNI V4
+- **`packages/subgraph`** - Subgraph of our contract to track data
 - **`packages/typescript-config`** - Shared TypeScript configuration
 - **`packages/eslint-config`** - Shared ESLint configuration
 
@@ -90,9 +90,9 @@ pnpm test:twitter
 ## 📝 Key Features
 
 1. **Token Creation via Twitter**: Users can create tokens by tweeting `@coinlaunchnow launch <name> <symbol>`
-2. **Escrow Wallets**: Each Twitter user gets a unique wallet for minting
-3. **Automated Replies**: Bot replies with contract address after minting
-4. **Fee Management**: Creators can claim accumulated trading fees
+2. **Automated Replies**: Bot replies with contract address after minting
+4. **Bonding curve + UNI V4**: Initial trading happen on a bonding curve then LP is deployed on UNI-V4 WIP
+3. **Fee Management**: Creators can claim accumulated trading fees WIP
 
 ## 🛠️ Development Tips
 
@@ -114,6 +114,10 @@ pnpm build --filter @coinlaunch/api
 ## 🚀 Deployment
 
 See individual app README files for deployment instructions.
+
+## UI SOURCE
+We used this open source repo as base to implement our UI
+https://github.com/RedWilly/Pump-UI/tree/bondle
 
 ## 📄 License
 
