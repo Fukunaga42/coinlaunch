@@ -332,7 +332,7 @@ const Home: React.FC = () => {
           <div className="text-center mb-4">
             <h3
                 onClick={handleLaunchClick}
-                className="cursor-pointer text-blue-600 hover:underline"
+                className="cursor-pointer hover:underline"
             >
               Launch your coin now!
             </h3>
